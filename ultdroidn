@@ -36,6 +36,58 @@ fi
 
 
 
+if [ "$1" = "quicksetup" ]; then
+echo "
+"
+echo "Quick device setup by Droid Everything"
+echo ""
+echo "■ Setting Transition Animation Scale"
+settings put global transition_animation_scale 0.4444444
+sleep 0.1
+echo "■ Setting Window Animation Scale"
+settings put global window_animation_scale 0.4444444
+sleep 0.1
+echo "■ Setting Animator Duration Scale"
+settings put global animator_duration_scale 0.4444444
+sleep 0.1
+echo "■ Setting clockwork to 12 hours"
+settings put global clockwork_24hr_time 0
+sleep 0.1
+echo "■ Enabling Force resizable activities"
+settings put global force_resizable_activities 1
+sleep 0.1
+echo "■ Adding app install permission from unknown sources"
+settings put secure install_non_market_apps 1
+sleep 0.1
+echo "■ Setting Multi press timeout"
+settings put secure multi_press_timeout 200
+sleep 0.1
+echo "■ Setting Tap duration threshold"
+settings put secure tap_duration_threshold 0.0555555
+sleep 0.1
+echo "■ Enabling Dark mode"
+settings put secure ui_night_mode 2
+sleep 0.1
+echo "■ Toggling off Auto Rotation"
+settings put system accelerometer_rotation 0
+sleep 0.1
+echo "■ Enabling Adaptive Fast charging if available"
+settings put system adaptive_fast_charging 1
+sleep 0.1
+echo "■ Setting system time to 12 hours view"
+settings put system time_12_24 12
+sleep 0.1
+
+echo ""
+echo "Quick setup complete
+Reboot to apply changes"
+echo "
+"
+exit 1
+fi
+
+
+
 # Separate app hibernator section
 if [ "$1" = "hibernate" ]; then
 echo "
@@ -160,8 +212,6 @@ fi
 
 
 
-
-
 if [ "$1" = "performance" ]; then
 
 echo "
@@ -191,6 +241,8 @@ cmd notification post -S messaging --conversation "Droid Everything" --message "
 
 exit 1
 fi
+
+
 
 if [ "$1" = "perfectdensity" ]; then
 
@@ -236,13 +288,16 @@ calculate_reduced_resolution() {
 # Check for the argument and calculate the reduced resolution accordingly
 case $2 in
   "low")
-    reduced_resolution=$(calculate_reduced_resolution 10)
+    reduced_resolution=$(calculate_reduced_resolution 15)
     ;;
   "medium")
-    reduced_resolution=$(calculate_reduced_resolution 17)
+    reduced_resolution=$(calculate_reduced_resolution 20)
+    ;;
+  "high")
+    reduced_resolution=$(calculate_reduced_resolution 25)
     ;;
   "extreme")
-    reduced_resolution=$(calculate_reduced_resolution 25)
+    reduced_resolution=$(calculate_reduced_resolution 35)
     ;;
   "default")
     # Default case: No change in resolution
@@ -384,8 +439,6 @@ echo "
 
 # Run the main function with provided arguments
 main "$@"
-
-
 
 
 
@@ -1213,6 +1266,12 @@ if [ "$1" = "help" ]; then
 echo "
 help [ print this help text ]
 
+### [ To run quick device setup ]
+To run quick device setup, write:
+sh sdcard/ultdroid quicksetup
+###
+
+
 ### [ To add a new game ]
 To add a new game, write:
 sh sdcard/ultdroidn add packagename nickname
@@ -1289,7 +1348,7 @@ sh sdcard/ultdroidn cleancache
 To only activate perfect density mode, write:
 sh sdcard/ultdroidn perfectdensity preset
 
-presets are [ low, medium, extreme, default ]
+presets are [ low, medium, high, extreme, default ]
 
 For example:
 sh sdcard/ultdroidn perfectdensity low
@@ -1319,6 +1378,12 @@ fi
 if [ $# -lt 2 ]; then
     echo "
 help [ print this help text ]
+
+### [ To run quick device setup ]
+To run quick device setup, write:
+sh sdcard/ultdroid quicksetup
+###
+
 
 ### [ To add a new game ]
 To add a new game, write:
@@ -1396,7 +1461,7 @@ sh sdcard/ultdroidn cleancache
 To only activate perfect density mode, write:
 sh sdcard/ultdroidn perfectdensity preset
 
-presets are [ low, medium, extreme, default ]
+presets are [ low, medium, high, extreme, default ]
 
 For example:
 sh sdcard/ultdroidn perfectdensity low
