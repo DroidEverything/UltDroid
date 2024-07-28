@@ -1,0 +1,2483 @@
+#!/system/bin/sh
+echo "
+"
+echo "UltDroid, The Ultimate Android Game Optimizer
+by Droid Everything
+"
+echo ""
+echo "[ No ROOT version 3.0 - FOR NON ROOTED DEVICES ONLY ]"
+sleep 0.5
+echo ""
+
+
+# Separate battery saver section
+if [ "$1" = "saver" ]; then
+echo "
+Enabling Battery saver mode:"
+sleep 0.1
+echo "■ Resetting thermalservice"
+  cmd thermalservice reset
+echo "■ Setting powermode to battery saver"
+  cmd power set-mode 1
+echo "■ Disabling fixed performance mode to save battery"
+  cmd power set-fixed-performance-mode-enabled false
+  settings put global low_power 1
+echo "■ Enabling adaptive power saver"
+  cmd power set-adaptive-power-saver-enabled true
+echo "■ Unforcing deviceidle"
+  cmd deviceidle unforce
+  cmd notification post -S messaging --conversation "Droid Everything" --message "UltDroid: Battery saver mode activated" "UltDroid:" "Activation successful">/dev/null
+  echo "
+■ Battery saver mode enabled successfully"
+  echo "
+"
+  exit 1
+fi
+
+
+
+# Separate app hibernator section
+if [ "$1" = "hibernate" ]; then
+echo "
+App Force Stopper and Hibernator Section:"
+sleep 0.1
+
+echo "■ Excluding system and essential core apps"
+# Define the keyword patterns to exclude essential system apps
+exclude_patterns="system|systemui|brevent|com.google.android.providers.media.module|telephony|dialer|wallpaper|miui|media|com.android.shell"
+
+echo "■ Fetching safe packages list"
+# Get the list of safe packages to force stop
+safe_packages=$(pm list packages | grep -Ev "$exclude_patterns")
+
+echo "■ Force stopping apps that are safe"
+echo "■ Hibernating all apps"
+echo "
+"
+
+echo "[ RAMstats before ]
+"
+
+# Get the total, available, and used RAM in KB
+total_ram_kb=$(grep MemTotal /proc/meminfo | awk '{print $2}')
+available_ram_kb=$(grep MemAvailable /proc/meminfo | awk '{print $2}')
+used_ram_kb=$(echo "$total_ram_kb - $available_ram_kb" | bc)
+
+# Convert the RAM values to MB
+total_ram_mb=$(echo "scale=2; $total_ram_kb / 1024" | bc)
+available_ram_mb=$(echo "scale=2; $available_ram_kb / 1024" | bc)
+used_ram_mb=$(echo "scale=2; $used_ram_kb / 1024" | bc)
+
+# Calculate the percentages of available and used RAM
+available_ram_percent=$(echo "scale=2; $available_ram_kb / $total_ram_kb * 100" | bc)
+used_ram_percent=$(echo "scale=2; $used_ram_kb / $total_ram_kb * 100" | bc)
+
+# Calculate the number of "■" characters to represent the bars
+total_num_bars=10
+available_num_bars=$(echo "$available_ram_percent / 10" | bc)  # 10 characters bar, each represents 10%
+used_num_bars=$(echo "$used_ram_percent / 10" | bc)  # 10 characters bar, each represents 10%
+
+# Total RAM bar (always fully filled)
+total_bar=$(printf "%0.s■" $(seq 1 $total_num_bars))
+
+# Available RAM bar
+available_bar=$(printf "%0.s■" $(seq 1 $available_num_bars))
+available_bar=$(printf "%-10s" "$available_bar")
+
+# Used RAM bar
+used_bar=$(printf "%0.s■" $(seq 1 $used_num_bars))
+used_bar=$(printf "%-10s" "$used_bar")
+
+# Print the total RAM bar, used RAM bar, and available RAM bar with RAM data in MB
+echo "Total RAM:
+[ 100.00% ${total_bar} ${total_ram_mb} MB ]"
+echo "Available RAM:
+[  ${available_ram_percent}% ${available_bar} ${available_ram_mb} MB ]"
+echo "Used RAM:
+[  ${used_ram_percent}% ${used_bar} ${used_ram_mb} MB ]"
+
+echo "
+"
+# Iterate over each package and force stop
+echo "$safe_packages" | while read -r package; do
+    # Extract the package name by removing the 'package:' prefix
+    package_name=$(echo "$package" | sed -e 's/package://')
+    echo "Hibernated:[ $package_name ]"
+    am force-stop $package_name
+    cmd app_hibernation set-state $package_name true
+done
+sleep 0.1
+echo "
+"
+
+echo "[ RAMstats after ]
+"
+
+# Get the total, available, and used RAM in KB
+total_ram_kb=$(grep MemTotal /proc/meminfo | awk '{print $2}')
+available_ram_kb=$(grep MemAvailable /proc/meminfo | awk '{print $2}')
+used_ram_kb=$(echo "$total_ram_kb - $available_ram_kb" | bc)
+
+# Convert the RAM values to MB
+total_ram_mb=$(echo "scale=2; $total_ram_kb / 1024" | bc)
+available_ram_mb=$(echo "scale=2; $available_ram_kb / 1024" | bc)
+used_ram_mb=$(echo "scale=2; $used_ram_kb / 1024" | bc)
+
+# Calculate the percentages of available and used RAM
+available_ram_percent=$(echo "scale=2; $available_ram_kb / $total_ram_kb * 100" | bc)
+used_ram_percent=$(echo "scale=2; $used_ram_kb / $total_ram_kb * 100" | bc)
+
+# Calculate the number of "■" characters to represent the bars
+total_num_bars=10
+available_num_bars=$(echo "$available_ram_percent / 10" | bc)  # 10 characters bar, each represents 10%
+used_num_bars=$(echo "$used_ram_percent / 10" | bc)  # 10 characters bar, each represents 10%
+
+# Total RAM bar (always fully filled)
+total_bar=$(printf "%0.s■" $(seq 1 $total_num_bars))
+
+# Available RAM bar
+available_bar=$(printf "%0.s■" $(seq 1 $available_num_bars))
+available_bar=$(printf "%-10s" "$available_bar")
+
+# Used RAM bar
+used_bar=$(printf "%0.s■" $(seq 1 $used_num_bars))
+used_bar=$(printf "%-10s" "$used_bar")
+
+# Print the total RAM bar, used RAM bar, and available RAM bar with RAM data in MB
+echo "Total RAM:
+[ 100.00% ${total_bar} ${total_ram_mb} MB ]"
+echo "Available RAM:
+[  ${available_ram_percent}% ${available_bar} ${available_ram_mb} MB ]"
+echo "Used RAM:
+[  ${used_ram_percent}% ${used_bar} ${used_ram_mb} MB ]"
+
+echo "
+"
+cmd notification post -S messaging --conversation "Droid Everything" --message "UltDroid: $(available_ram_mb) MB RAM available after force stopping" "UltDroid:" "Successful">/dev/null
+
+exit 1
+fi
+
+
+
+
+
+if [ "$1" = "performance" ]; then
+
+echo "
+Activating performance mode:"
+sleep 0.1
+echo "■ Setting Thermalservice status to 0"
+cmd thermalservice override-status 0
+echo "■ Setting powermode to [ Performance ]"
+cmd power set-mode 0
+echo "■ Enabling fixed performance mode "
+cmd power set-fixed-performance-mode-enabled true
+echo "■ Disabling Adaptive power saver "
+cmd power set-adaptive-power-saver-enabled false
+echo "■ Disabling MSAA "
+setprop debug.egl.force_msaa false
+echo "■ Disabling HDR types for more performance"
+cmd display set-user-disabled-hdr-types 1 2 3 4
+echo "■ Disabling stats collection"
+cmd looper_stats disable
+echo "■ Setting hardware renderer to SkiaGl "
+setprop debug.hwui.renderer skiagl
+echo "■ Allowing Refresh rate overrides
+
+"
+setprop debug.display.allow_non_native_refresh_rate_override 1
+cmd notification post -S messaging --conversation "Droid Everything" --message "UltDroid: Performance mode activated" "UltDroid:" "Activation successful">/dev/null
+
+exit 1
+fi
+
+if [ "$1" = "perfectdensity" ]; then
+
+
+echo "
+Perfect Density Section:"
+sleep 0.5
+echo "
+"
+echo "■ Fetching Physical Resolution"
+sleep 0.5
+
+# Get the physical display resolution using wm size without considering override
+resolution=$(wm size | awk -F: '/Physical size/{gsub(/[ ]+/,"",$2); print $2}')
+
+# Extract width and height
+original_width=$(echo $resolution | cut -d'x' -f1)
+original_height=$(echo $resolution | cut -d'x' -f2)
+
+echo "■ Calculating Width by Height "
+
+# Calculate aspect ratio as a fraction
+aspect_ratio_numerator=$original_width
+aspect_ratio_denominator=$original_height
+
+echo "■ Aspect ratio found 
+  [ $original_width/$original_height ]"
+sleep 1
+echo "■ Calculating resolution reduction"
+sleep 0.5
+echo "■ Resolution will stay same 
+   if you've selected default"
+sleep 1
+
+# Function to calculate reduced resolution maintaining aspect ratio
+calculate_reduced_resolution() {
+  percentage=$1
+  reduced_width_numerator=$(echo "scale=0; $original_width * (100 - $percentage) / 100" | bc)
+  reduced_height_numerator=$(echo "scale=0; $original_height * (100 - $percentage) / 100" | bc)
+  echo "$reduced_width_numerator x $reduced_height_numerator"
+}
+
+# Check for the argument and calculate the reduced resolution accordingly
+case $2 in
+  "low")
+    reduced_resolution=$(calculate_reduced_resolution 10)
+    ;;
+  "medium")
+    reduced_resolution=$(calculate_reduced_resolution 17)
+    ;;
+  "extreme")
+    reduced_resolution=$(calculate_reduced_resolution 25)
+    ;;
+  "default")
+    # Default case: No change in resolution
+    reduced_resolution=$resolution
+    ;;
+  *)
+    echo "
+Available modes are:
+[ low, medium, extreme, default ]
+
+"
+    exit 1
+    ;;
+esac
+
+
+echo "■ Extracting width-height from reduced resolution"
+sleep 0.5
+# Extract changed width and height
+width=$(echo $reduced_resolution | cut -d'x' -f1)
+height=$(echo $reduced_resolution | cut -d'x' -f2)
+echo "
+"
+echo "■ Changing resolution to [ $reduced_resolution ]"
+sleep 1
+
+wm size "$(echo "${width}" | tr -d '[:space:]')x$(echo "${height}" | tr -d '[:space:]')"
+echo "
+"
+echo "■ Calculating width to height ratio"
+sleep 0.5
+# Calculate width-to-height ratio
+ratio=$(echo "scale=2; $width / $height" | bc)
+
+echo "■ Multiplying ratio by Droid constant"
+sleep 0.5
+# Multiply the ratio by 14.81481481 [ Droid Ratio ]
+result=$(echo "scale=2; $ratio * 14.81481481" | bc)
+
+echo "■ Fetching perfect density for selected resolution"
+sleep 0.5
+# Divide the height by the latest found ratio and round to the nearest integer
+height_result=$(printf "%.0f" "$(echo "scale=2; $height / $result" | bc)")
+
+echo "■ Perfect density found: [ $height_result ]"
+sleep 1
+echo "
+"
+echo "Information:"
+sleep 0.5
+echo "■ Physical Display Resolution: 
+  [ $resolution ]"
+sleep 0.5
+echo "■ Override Display resolution: 
+  [ $reduced_resolution ]"
+sleep 0.5
+echo "■ Width-Height Ratio: [ $ratio ]"
+sleep 0.5
+echo "■ Ratio multiplied by Droid constant: 
+  [ $result ]"
+sleep 0.5
+echo "■ Height divided by the final ratio (rounded): 
+  [ $height_result ]"
+sleep 0.5
+echo "■ Setting perfect density to [ $height_result ]"
+sleep 1
+# Set the rounded answer as the density using wm density
+wm density $height_result
+echo "
+"
+cmd notification post -S messaging --conversation "Droid Everything" --message "UltDroid: PerfectDensity executed successfully" "UltDroid:" "Successful">/dev/null
+
+# Code written by Droid Everything
+exit 1
+fi
+
+
+
+# gameconfig list viewer section
+# Function to parse game overlay configurations
+parse_game_overlay() {
+    local output
+    output=$(device_config list | grep game_overlay)
+
+    echo "$output" | while read -r line; do
+        key="${line%%=*}"
+        value="${line#*=}"
+        package="${key#*/}"
+        echo "Package: $package"
+        parse_settings "$value"
+        echo ""
+    done
+}
+
+# Function to parse individual settings
+parse_settings() {
+    settings="$1"
+    modes=$(echo "$settings" | tr ':' '\n')
+    
+    for mode in $modes; do
+        # Extract mode
+        mode_value=$(echo "$mode" | grep -o 'mode=[0-9]*' | cut -d= -f2)
+        case $mode_value in
+            2)
+                mode_value="Performance"
+                ;;
+            3)
+                mode_value="Battery saver"
+                ;;
+        esac
+        echo "  Mode: $mode_value"
+
+        # Extract downscaleFactor
+        downscaleFactor=$(echo "$mode" | grep -o 'downscaleFactor=[^,]*' | cut -d= -f2)
+        if [ -n "$downscaleFactor" ]; then
+            echo "  DownscaleFactor: $downscaleFactor"
+        fi
+        
+        # Extract fps
+        fps=$(echo "$mode" | grep -o 'fps=[^,]*' | cut -d= -f2)
+        if [ -n "$fps" ]; then
+            echo "  FPS: $fps"
+        fi
+      echo
+    done
+}
+
+# Function to handle the main logic
+main() {
+    if [ "$1" = "gameconfig" ]; then
+  echo "
+Game Config List viewer:"
+echo "
+"
+        parse_game_overlay
+  
+    fi
+}
+
+# Run the main function with provided arguments
+main "$@"
+
+
+
+
+
+if [ "$1" = "cleancache" ]; then
+echo "
+Cache cleaner section:"
+echo "
+"
+
+echo "[ Storagestats before ]
+"
+# Total Available storage in KB
+storage_info=$(df /data | tail -1)
+total_storage_kb=$(echo $storage_info | awk '{print $2}')
+available_storage_kb=$(echo $storage_info | awk '{print $4}')
+used_storage_kb=$(echo "$total_storage_kb - $available_storage_kb" | bc)
+
+# Storage values to GB
+total_storage_gb=$(echo "scale=2; $total_storage_kb / 1024 / 1024" | bc)
+available_storage_gb=$(echo "scale=2; $available_storage_kb / 1024 / 1024" | bc)
+used_storage_gb=$(echo "scale=2; $used_storage_kb / 1024 / 1024" | bc)
+
+# Percentage of available storage
+available_storage_percent=$(echo "scale=2; $available_storage_kb / $total_storage_kb * 100" | bc)
+used_storage_percent=$(echo "scale=2; $used_storage_kb / $total_storage_kb * 100" | bc)
+
+# The number of "■" characters to represent the bars
+total_num_bars=10
+available_num_bars=$(echo "$available_storage_percent / 10" | bc)  # 10 characters bar, each represents 10%
+used_num_bars=$(echo "$used_storage_percent / 10" | bc)
+
+# Total storage bar (always fully filled)
+total_bar=$(printf "%0.s■" $(seq 1 $total_num_bars))
+
+# Available storage bar
+available_bar=$(printf "%0.s■" $(seq 1 $available_num_bars))
+available_bar=$(printf "%-10s" "$available_bar")
+
+# Used storage bar
+used_bar=$(printf "%0.s■" $(seq 1 $used_num_bars))
+used_bar=$(printf "%-10s" "$used_bar")
+
+# Print the total storage bar with 100% on the left side, and the available storage bar with storage data in GB
+echo "Total Storage:
+[ 100.00% ${total_bar} ${total_storage_gb} GB ]"
+echo "Available Storage: 
+[  ${available_storage_percent}% ${available_bar} ${available_storage_gb} GB ]"
+echo "Used Storage: 
+[  ${used_storage_percent}% ${used_bar} ${used_storage_gb} GB ]"
+
+
+echo "
+"
+
+log_message() {
+  local message="$1"
+  echo "$message"
+}
+
+get_available_space() {
+  df /data | awk 'NR==2{print $4}'
+}
+
+format_size() {
+  local size=$1
+  if [ "$size" -lt 1024 ]; then
+    echo "${size} KB"
+  elif [ "$size" -lt 1048576 ]; then
+    echo "$((size / 1024)) MB"
+  else
+    echo "$((size / 1048576)) GB"
+  fi
+}
+
+clean_cache() {
+  pm trim-caches 999G internal
+  if [ $? -ne 0 ]; then
+    log_message "ERROR: Failed to trim caches."
+    exit 1
+  fi
+}
+
+check_environment() {
+  if ! command -v pm > /dev/null; then
+    log_message "ERROR: 'pm' command not found. Ensure the script is running in an Android environment."
+    exit 1
+  fi
+  if ! command -v df > /dev/null; then
+    log_message "ERROR: 'df' command not found."
+    exit 1
+  fi
+}
+
+main() {
+  log_message "■ Starting cache optimization."
+
+  check_environment
+
+  available_before=$(get_available_space)
+  if [ -z "$available_before" ]; then
+    log_message "ERROR: Unable to retrieve available space before cleaning."
+    exit 1
+  fi
+
+  log_message "■ Available space before cleaning: [ $(format_size $available_before) ]"
+
+  clean_cache
+
+  available_after=$(get_available_space)
+  if [ -z "$available_after" ]; then
+    log_message "ERROR: Unable to retrieve available space after cleaning."
+    exit 1
+  fi
+
+  log_message "■ Available space after cleaning: [ $(format_size $available_after) ]"
+
+  cleared_cache=$((available_after - available_before))
+
+  if [ "$cleared_cache" -ge 0 ]; then
+    log_message "■ Cleared cache: [ $(format_size $cleared_cache) ]"
+  else
+    log_message "■ No cache found or cleaned."
+  fi
+  
+  log_message "■ Cache cleared successfully
+  
+  "
+  
+}
+
+main "$@"
+
+echo "[ Storagestats after ]
+"
+# Total Available storage in KB
+storage_info=$(df /data | tail -1)
+total_storage_kb=$(echo $storage_info | awk '{print $2}')
+available_storage_kb=$(echo $storage_info | awk '{print $4}')
+used_storage_kb=$(echo "$total_storage_kb - $available_storage_kb" | bc)
+
+# Storage values to GB
+total_storage_gb=$(echo "scale=2; $total_storage_kb / 1024 / 1024" | bc)
+available_storage_gb=$(echo "scale=2; $available_storage_kb / 1024 / 1024" | bc)
+used_storage_gb=$(echo "scale=2; $used_storage_kb / 1024 / 1024" | bc)
+
+# Percentage of available storage
+available_storage_percent=$(echo "scale=2; $available_storage_kb / $total_storage_kb * 100" | bc)
+used_storage_percent=$(echo "scale=2; $used_storage_kb / $total_storage_kb * 100" | bc)
+
+# The number of "■" characters to represent the bars
+total_num_bars=10
+available_num_bars=$(echo "$available_storage_percent / 10" | bc)  # 10 characters bar, each represents 10%
+used_num_bars=$(echo "$used_storage_percent / 10" | bc)
+
+# Total storage bar (always fully filled)
+total_bar=$(printf "%0.s■" $(seq 1 $total_num_bars))
+
+# Available storage bar
+available_bar=$(printf "%0.s■" $(seq 1 $available_num_bars))
+available_bar=$(printf "%-10s" "$available_bar")
+
+# Used storage bar
+used_bar=$(printf "%0.s■" $(seq 1 $used_num_bars))
+used_bar=$(printf "%-10s" "$used_bar")
+
+# Print the total storage bar with 100% on the left side, and the available storage bar with storage data in GB
+echo "Total Storage:
+[ 100.00% ${total_bar} ${total_storage_gb} GB ]"
+echo "Available Storage: 
+[  ${available_storage_percent}% ${available_bar} ${available_storage_gb} GB ]"
+echo "Used Storage: 
+[  ${used_storage_percent}% ${used_bar} ${used_storage_gb} GB ]"
+
+
+echo "
+"
+
+cmd notification post -S messaging --conversation "Droid Everything" --message "UltDroid: Cache $(format_size $cleared_cache) cleared successfully" "UltDroid:" "Clear successful">/dev/null
+exit 1
+fi
+
+if [ "$1" = "deviceinfo" ]; then
+echo ""
+echo "[ Batterystats ] #############
+"
+# Get the battery health status
+health_status=$(dumpsys battery | grep "health:" | awk '{print $2}')
+
+# Translate the numeric health status to text
+case $health_status in
+    1)
+        health_text="Unknown"
+        ;;
+    2)
+        health_text="Good"
+        ;;
+    3)
+        health_text="Overheat"
+        ;;
+    4)
+        health_text="Dead"
+        ;;
+    5)
+        health_text="Over Voltage"
+        ;;
+    6)
+        health_text="Unspecified failure"
+        ;;
+    7)
+        health_text="Cold"
+        ;;
+    *)
+        health_text="Unknown"
+        ;;
+esac
+
+# Print the battery health status as text
+echo "Battery Health: $health_text"
+
+status=$(dumpsys battery | grep "status:" | awk '{print $2}')
+case $status in
+    1)
+        status_text="Unknown"
+        ;;
+    2)
+        status_text="Charging"
+        ;;
+    3)
+        status_text="Discharging"
+        ;;
+    4)
+        status_text="Not charging"
+        ;;
+    5)
+        status_text="Full"
+        ;;
+    *)
+        status_text="Unknown"
+        ;;
+esac
+
+# Print the battery status as text
+echo "Battery Status: $status_text"
+
+# Get the battery temperature
+temperature=$(dumpsys battery | grep "temperature:" | awk '{print $2}')
+
+# Convert the temperature to degrees Celsius
+temperature_c=$(echo "scale=1; $temperature / 10" | bc)
+
+# Print the battery temperature
+echo "Battery Temperature: $temperature_c°C"
+
+technology=$(dumpsys battery | grep "technology:" | awk '{print $2}')
+echo "Battery Technology: $technology"
+
+voltage=$(dumpsys battery | grep "voltage:" | grep -v "Max charging voltage" | awk '{print $2}')
+echo "Battery Voltage: $voltage mV"
+
+current=$(dumpsys battery | grep "current now:" | awk '{print $3}')
+echo "Battery Current now: $current µA"
+echo "
+##############################
+
+"
+
+echo "[ RAMstats ] #################
+"
+
+# Get the total, available, and used RAM in KB
+total_ram_kb=$(grep MemTotal /proc/meminfo | awk '{print $2}')
+available_ram_kb=$(grep MemAvailable /proc/meminfo | awk '{print $2}')
+used_ram_kb=$(echo "$total_ram_kb - $available_ram_kb" | bc)
+
+# Convert the RAM values to MB
+total_ram_mb=$(echo "scale=2; $total_ram_kb / 1024" | bc)
+available_ram_mb=$(echo "scale=2; $available_ram_kb / 1024" | bc)
+used_ram_mb=$(echo "scale=2; $used_ram_kb / 1024" | bc)
+
+# Calculate the percentages of available and used RAM
+available_ram_percent=$(echo "scale=2; $available_ram_kb / $total_ram_kb * 100" | bc)
+used_ram_percent=$(echo "scale=2; $used_ram_kb / $total_ram_kb * 100" | bc)
+
+# Calculate the number of "■" characters to represent the bars
+total_num_bars=10
+available_num_bars=$(echo "$available_ram_percent / 10" | bc)  # 10 characters bar, each represents 10%
+used_num_bars=$(echo "$used_ram_percent / 10" | bc)  # 10 characters bar, each represents 10%
+
+# Total RAM bar (always fully filled)
+total_bar=$(printf "%0.s■" $(seq 1 $total_num_bars))
+
+# Available RAM bar
+available_bar=$(printf "%0.s■" $(seq 1 $available_num_bars))
+available_bar=$(printf "%-10s" "$available_bar")
+
+# Used RAM bar
+used_bar=$(printf "%0.s■" $(seq 1 $used_num_bars))
+used_bar=$(printf "%-10s" "$used_bar")
+
+# Print the total RAM bar, used RAM bar, and available RAM bar with RAM data in MB
+echo "Total RAM:
+[ 100.00% ${total_bar} ${total_ram_mb} MB ]"
+echo "Available RAM:
+[  ${available_ram_percent}% ${available_bar} ${available_ram_mb} MB ]"
+echo "Used RAM:
+[  ${used_ram_percent}% ${used_bar} ${used_ram_mb} MB ]"
+
+echo "
+##############################
+
+"
+
+echo "[ Storagestats ] #############
+"
+# Total Available storage in KB
+storage_info=$(df /data | tail -1)
+total_storage_kb=$(echo $storage_info | awk '{print $2}')
+available_storage_kb=$(echo $storage_info | awk '{print $4}')
+used_storage_kb=$(echo "$total_storage_kb - $available_storage_kb" | bc)
+
+# Storage values to GB
+total_storage_gb=$(echo "scale=2; $total_storage_kb / 1024 / 1024" | bc)
+available_storage_gb=$(echo "scale=2; $available_storage_kb / 1024 / 1024" | bc)
+used_storage_gb=$(echo "scale=2; $used_storage_kb / 1024 / 1024" | bc)
+
+# Percentage of available storage
+available_storage_percent=$(echo "scale=2; $available_storage_kb / $total_storage_kb * 100" | bc)
+used_storage_percent=$(echo "scale=2; $used_storage_kb / $total_storage_kb * 100" | bc)
+
+# The number of "■" characters to represent the bars
+total_num_bars=10
+available_num_bars=$(echo "$available_storage_percent / 10" | bc)  # 10 characters bar, each represents 10%
+used_num_bars=$(echo "$used_storage_percent / 10" | bc)
+
+# Total storage bar (always fully filled)
+total_bar=$(printf "%0.s■" $(seq 1 $total_num_bars))
+
+# Available storage bar
+available_bar=$(printf "%0.s■" $(seq 1 $available_num_bars))
+available_bar=$(printf "%-10s" "$available_bar")
+
+# Used storage bar
+used_bar=$(printf "%0.s■" $(seq 1 $used_num_bars))
+used_bar=$(printf "%-10s" "$used_bar")
+
+# Print the total storage bar with 100% on the left side and the available storage bar with storage data in GB
+echo "Total Storage:
+[ 100.00% ${total_bar} ${total_storage_gb} GB ]"
+echo "Available Storage: 
+[  ${available_storage_percent}% ${available_bar} ${available_storage_gb} GB ]"
+echo "Used Storage: 
+[  ${used_storage_percent}% ${used_bar} ${used_storage_gb} GB ]"
+
+echo "
+##############################
+
+"
+
+
+echo "[ Displaystats ] #############
+"
+# Display section
+fps="$(dumpsys display | grep -o -E 'fps=[0-9]+(\.[0-9]+)?' | cut -d'=' -f2 | sort -nr | head -n1 | awk '{printf("%d\n", ($1+0.5)/1)}')"
+resolution=$(wm size | awk -F: '/Physical size/{gsub(/[ ]+/,"",$2); print $2}')
+
+
+# Extract width and height
+width=$(echo $resolution | cut -d'x' -f1)
+height=$(echo $resolution | cut -d'x' -f2)
+echo "
+                    $width
+                 ---------
+                ■■■■■■■| 
+                ■|       ■ |
+                ■ |      ■ |
+                ■  |     ■ |
+                ■   |    ■ | $height
+                ■    |   ■ |
+                ■     |  ■ |
+                ■      | ■ |
+                ■       |■ |
+                ■■■■■■■|
+                   $fps hz
+
+"
+
+# Function to extract and format rounded corners information
+format_rounded_corners() {
+    local corners_info="$1"
+    local formatted_corners=""
+
+    # Replace and format each rounded corner
+    formatted_corners=$(echo "$corners_info" | sed -e 's/RoundedCorners{//g; s/RoundedCorner{position=\([A-Za-z]*\), radius=\([0-9]*\), center=Point(\([0-9]*, [0-9]*\))}/- Position: \1\n  Radius: \2\n  Center: (\3)/g')
+
+    # Remove leading [- and properly align
+    formatted_corners=$(echo "$formatted_corners" | sed 's/^  - Position:/- Position:/')
+
+    echo "$formatted_corners"
+}
+
+# Function to extract and format display state information
+format_display_state() {
+    local display_state_info="$1"
+    local formatted_state=""
+
+    # Extract display state details
+    display_id=$(echo "$display_state_info" | grep "Display Id" | cut -d'=' -f2)
+    display_state=$(echo "$display_state_info" | grep "Display State" | cut -d'=' -f2)
+    display_brightness=$(echo "$display_state_info" | grep "Display Brightness" | cut -d'=' -f2)
+    display_sdr_brightness=$(echo "$display_state_info" | grep "Display SdrBrightness" | cut -d'=' -f2)
+
+    # Format display state information
+    formatted_state="Display States:"
+    formatted_state="$formatted_state\n  Display Id=$display_id"
+    formatted_state="$formatted_state\n  Display State=$display_state"
+    formatted_state="$formatted_state\n  Display Brightness=$display_brightness"
+    formatted_state="$formatted_state\n  Display SdrBrightness=$display_sdr_brightness"
+
+    echo "$formatted_state"
+}
+
+# Function to extract and format HDR capabilities information
+format_hdr_capabilities() {
+    local hdr_capabilities_info="$1"
+    local formatted_hdr=""
+
+    # Extract HDR capabilities details
+    max_luminance=$(echo "$hdr_capabilities_info" | grep -o "mMaxLuminance=[0-9.]*" | cut -d'=' -f2)
+    max_average_luminance=$(echo "$hdr_capabilities_info" | grep -o "mMaxAverageLuminance=[0-9.]*" | cut -d'=' -f2)
+    min_luminance=$(echo "$hdr_capabilities_info" | grep -o "mMinLuminance=[0-9.]*" | cut -d'=' -f2)
+
+    # Format HDR capabilities information
+    formatted_hdr="HDR Capabilities:"
+    formatted_hdr="$formatted_hdr\n    - Maximum Luminance: $max_luminance cd/m²"
+    formatted_hdr="$formatted_hdr\n    - Maximum Average Luminance: $max_average_luminance cd/m²"
+    formatted_hdr="$formatted_hdr\n    - Minimum Luminance: $min_luminance cd/m²"
+
+    echo "$formatted_hdr"
+}
+
+# Get display information
+display_info=$(dumpsys display)
+
+# Extract important information using simpler commands
+resolution=$(echo "$display_info" | grep -m 1 "real" | sed 's/.*real \([0-9]* x [0-9]*\).*/\1/')
+density=$(echo "$display_info" | grep -m 1 "density" | sed 's/.*density \([0-9]*\).*/\1/')
+refresh_rate=$(echo "$display_info" | grep -m 1 "fps=" | sed 's/.*fps=\([0-9]*\.[0-9]*\).*/\1/')
+hdr_capabilities=$(echo "$display_info" | grep -m 1 "HdrCapabilities" | sed 's/.*HdrCapabilities{\([^}]*\)}.*/\1/')
+brightness_minimum=$(echo "$display_info" | grep -m 1 "brightnessMinimum" | sed 's/.*brightnessMinimum \([0-9]*\.[0-9]*\).*/\1/')
+brightness_maximum=$(echo "$display_info" | grep -m 1 "brightnessMaximum" | sed 's/.*brightnessMaximum \([0-9]*\.[0-9]*\).*/\1/')
+rounded_corners=$(echo "$display_info" | grep -m 1 "roundedCorners" | sed 's/.*roundedCorners \(RoundedCorners{\([^}]*\)}\).*/\1/')
+display_state_info=$(echo "$display_info" | grep -A4 "Display States" | tail -n +2)
+
+# Extract max and average luminance from HDR capabilities
+max_luminance=$(echo "$hdr_capabilities" | grep -o "mMaxLuminance=[0-9.]*" | cut -d'=' -f2)
+max_average_luminance=$(echo "$hdr_capabilities" | grep -o "mMaxAverageLuminance=[0-9.]*" | cut -d'=' -f2)
+min_luminance=$(echo "$hdr_capabilities" | grep -o "mMinLuminance=[0-9.]*" | cut -d'=' -f2)
+
+# Format rounded corners information
+formatted_rounded_corners=$(format_rounded_corners "$rounded_corners")
+
+# Format display state information
+formatted_display_state=$(format_display_state "$display_state_info")
+
+# Format HDR capabilities information
+formatted_hdr_capabilities=$(format_hdr_capabilities "$hdr_capabilities")
+
+# Display extracted information
+echo "Display Information:"
+echo "  
+Resolution: $resolution
+  $(wm size | grep Override)"
+echo "  Density: $density dpi
+  $(wm density | grep Override)"
+echo "  Refresh Rate: $refresh_rate Hz"
+echo "
+$formatted_hdr_capabilities"
+echo "  Brightness Range: $brightness_minimum - $brightness_maximum"
+echo "
+Rounded corners:
+$formatted_rounded_corners"
+echo "
+$formatted_display_state"
+echo "
+##############################
+
+"
+
+
+echo "[ CPUstats ] #################
+"
+
+echo "Current clockspeed [ All cores ]
+"
+# Get CPU clock speeds
+cpu_clocks=$(cat /sys/devices/system/cpu/cpu*/cpufreq/scaling_cur_freq 2>/dev/null | awk '{print $1/1000 " MHz"}')
+
+# Initialize a counter
+count=0
+
+# Loop through each CPU clock speed and format the output
+formatted_output=""
+for clock_speed in $cpu_clocks
+do
+    if [ $count -eq 0 ]; then
+        formatted_output="$clock_speed"
+    else
+        formatted_output="$formatted_output $clock_speed"
+    fi
+    count=$(( (count + 1) % 4 ))
+    if [ $count -eq 0 ]; then
+        echo "$formatted_output"
+        formatted_output=""
+    fi
+done
+
+# Print any remaining clock speeds if they are not already printed
+if [ -n "$formatted_output" ]; then
+    echo "$formatted_output"
+fi
+echo "
+"
+
+num_cores=$(cat /sys/devices/system/cpu/present | awk -F '-' '{print $2+1}')
+
+cpu_arch=$(cat /proc/cpuinfo | grep 'CPU architecture' | head -n 1 | awk '{print $3}')
+
+cpu_implementer=$(cat /proc/cpuinfo | grep 'CPU implementer' | head -n 1 | awk -F ': ' '{print $2}')
+
+cpu_part=$(cat /proc/cpuinfo | grep 'CPU part' | head -n 1 | awk -F ': ' '{print $2}')
+
+cpu_part=$(cat /proc/cpuinfo | grep 'CPU part' | head -n 1 | awk -F ': ' '{print $2}')
+
+features=$(cat /proc/cpuinfo | grep 'Features' | head -n 1 | awk -F ': ' '{print $2}')
+
+
+cpu_temp=$(cat /sys/class/thermal/thermal_zone0/temp 2>/dev/null)
+if [ -n "$cpu_temp" ]; then
+    cpu_temp=$(echo "scale=1; $cpu_temp / 1000" | bc)
+    cpu_temp="$cpu_temp °C"
+else
+    cpu_temp="Not available"
+fi
+
+# Display gathered CPU information
+echo "Number of CPU cores: $num_cores"
+echo "CPU architecture: $cpu_arch"
+echo "CPU implementer: $cpu_implementer"
+echo "CPU part: $cpu_part"
+echo "CPU features: $features"
+echo "CPU temperature: $cpu_temp"
+
+echo ""
+
+echo "Affected CPUs [ All cores ]
+
+$(cat /sys/devices/system/cpu/cpu*/cpufreq/affected_cpus)
+
+"
+
+echo "Max CPU Frequency [ All cores ]
+
+$(cat /sys/devices/system/cpu/cpu*/cpufreq/cpuinfo_max_freq)
+
+"
+
+echo "Minimum CPU Frequency [ All cores ]
+
+$(cat /sys/devices/system/cpu/cpu*/cpufreq/cpuinfo_min_freq)
+
+"
+
+echo "CPU Transition latency [ All cores ]
+
+$(cat /sys/devices/system/cpu/cpu*/cpufreq/cpuinfo_transition_latency)
+
+"
+
+echo "Available Frequencies [ All cores ]
+
+$(cat /sys/devices/system/cpu/cpu*/cpufreq/scaling_available_frequencies)
+
+"
+
+echo "Available Governors [ All cores ]
+
+$(cat /sys/devices/system/cpu/cpu*/cpufreq/scaling_available_governors)
+
+"
+
+echo "Current Scaling Frequencies [ All cores ]
+
+$(cat /sys/devices/system/cpu/cpu*/cpufreq/scaling_cur_freq)
+
+"
+
+echo "Scaling Driver [ All cores ]
+
+$(cat /sys/devices/system/cpu/cpu*/cpufreq/scaling_driver)
+
+"
+
+echo "Scaling Governor [ All cores ]
+
+$(cat /sys/devices/system/cpu/cpu*/cpufreq/scaling_governor)
+
+"
+
+echo "CPU Transition Table [ All cores ]
+
+$(cat /sys/devices/system/cpu/cpu*/cpufreq/stats/trans_table)
+
+"
+
+echo "CPU Total Transition [ All cores ]
+
+$(cat /sys/devices/system/cpu/cpu*/cpufreq/stats/total_trans)
+"
+
+echo "
+##############################
+
+"
+
+echo "
+"
+
+exit 1
+fi
+
+
+# Ultimate Gamelist section
+GAME_LIST_FILE="/sdcard/gamelist.txt"  # Ensure to set the correct path
+
+# Function to create gamelist.txt if it doesn't exist
+create_game_list() {
+    if [ ! -f "$GAME_LIST_FILE" ]; then
+        touch "$GAME_LIST_FILE"
+        echo "gamelist.txt created at $GAME_LIST_FILE"
+    fi
+}
+
+# Function to add games to gamelist.txt
+add_game_to_list() {
+    package=$1
+    alias=$2
+
+    # Check if the package name is already associated with another nickname
+    existing_alias=$(awk -v package="$package" '$1 == package {print $2}' "$GAME_LIST_FILE")
+    if [ -n "$existing_alias" ]; then
+        echo "
+Error:
+  Package [ $package ] is already associated
+  with nickname [ $existing_alias ]
+  "
+  cmd notification post -S messaging --conversation "Droid Everything" --message "UltDroid: Packagename or nickname already in use" "UltDroid:" "Successful">/dev/null
+        return
+    fi
+
+    # Check if the nickname is already in use
+    if grep -q " $alias$" "$GAME_LIST_FILE"; then
+        echo "Error: Nickname [ $alias ] is already in use."
+        return
+    fi
+
+    # Add package and nickname to gamelist
+    echo "$package $alias" >> "$GAME_LIST_FILE"
+    echo "
+  Added:
+  Game [ $package ] with nickname [ $alias ]
+  added to gamelist.txt
+  "
+  cmd notification post -S messaging --conversation "Droid Everything" --message "UltDroid: Game [ $package ] added to gamelist" "UltDroid:" "Successful">/dev/null
+
+}
+
+# Function to remove game from gamelist.txt by nickname
+remove_game_from_list() {
+    alias=$1
+    if grep -q " $alias$" "$GAME_LIST_FILE"; then
+        sed -i "/ $alias$/d" "$GAME_LIST_FILE"
+        echo "
+Removed:
+  Game with nickname [ $alias ]
+  removed from gamelist.txt"
+  cmd notification post -S messaging --conversation "Droid Everything" --message "UltDroid: Game [ $alias ] removed from gamelist" "UltDroid:" "Successful">/dev/null
+
+    else
+        echo "
+Error:
+  Nickname [ $alias ] not found in gamelist.txt
+  "
+    fi
+}
+
+# Function to display the contents of gamelist.txt
+display_game_list() {
+    echo "Current game list (package nickname):"
+    if [ -f "$GAME_LIST_FILE" ]; then
+  echo ""
+        cat "$GAME_LIST_FILE"
+    else
+        echo "gamelist.txt does not exist."
+    fi
+}
+
+# Function to check if a package name is valid
+is_valid_package() {
+    package=$1
+    pm list packages -3 | grep -q "^package:$package$"
+}
+
+# Function to get the package name by nickname
+get_package_by_alias() {
+    alias=$1
+    package=$(grep " $alias$" "$GAME_LIST_FILE" | awk '{print $1}')
+    echo "$package"
+}
+
+# Main logic to manage the gamelist
+manage_gamelist() {
+    create_game_list
+
+    if [ "$1" = "add" ]; then
+        if [ -n "$2" ] && [ -n "$3" ]; then
+            if is_valid_package "$2"; then
+                add_game_to_list "$2" "$3"
+            else
+                echo "Error: Package $2 is not valid or not installed."
+            fi
+        else
+            echo "Error: Please provide the game package name and nickname."
+            echo "Usage: $0 add <game_package_name> <nickname>"
+        fi
+    elif [ "$1" = "remove" ]; then
+        if [ -n "$2" ]; then
+            remove_game_from_list "$2"
+        else
+            echo "Error: Please provide the nickname of the game to remove."
+            echo "Usage: $0 remove <nickname>"
+        fi
+    elif [ "$1" = "gamelist" ]; then
+  echo ""
+        echo "$(display_game_list)
+  "
+    else
+        alias=$1
+        package=$(get_package_by_alias "$alias")
+        if [ -n "$package" ]; then
+            echo "$package"  # Print package name for given alias
+        
+        fi
+    fi
+}
+
+# Main script entry point
+main() {
+    manage_gamelist "$@"
+}
+
+# Call the main function with passed arguments
+main "$@"
+
+
+
+if [ "$1" = "gms" ]; then
+case $2 in
+  "enable")
+echo "
+■ Enabling Google Play Services
+"
+    pm enable com.google.android.gms
+    settings put global zen_mode 0
+echo "
+■ Google Play Services will now work
+
+"
+cmd notification post -S messaging --conversation "Droid Everything" --message "UltDroid: Google Play Services Enabled" "UltDroid:" "Successful">/dev/null
+
+    ;;
+  "disable")
+echo "
+■ Disabling Google Play Services
+[ No ROOT only works below Android 14 ]
+"
+    pm disable-user --user 0 com.google.android.gms
+    settings put global zen_mode 4
+echo "
+Note: When Google Play Services is disabled
+Google services will not work.
+
+For example:
+YouTube, Google Translate, Google Maps etc
+[ Will not work ]
+
+■ To use them, enable Google Play Services.
+
+"
+cmd notification post -S messaging --conversation "Droid Everything" --message "UltDroid: Google Play Services Disabled" "UltDroid:" "Successful">/dev/null
+
+    ;;
+  *)
+    echo "
+### [ Disable Google Play Services mode ] ##########
+To disable Google Play Services for extra RAM, write:
+sh sdcard/ultdroidn gms disable
+###
+
+
+### [ Enable Google Play Services mode ]
+To enable Google Play Services for extra RAM, write:
+sh sdcard/ultdroidn gms enable
+###
+
+"
+    exit 1
+    ;;
+esac
+
+exit 1
+fi
+
+
+if [ "$1" = "help" ]; then
+echo "
+help [ print this help text ]
+
+### [ To add a new game ]
+To add a new game, write:
+sh sdcard/ultdroidn add packagename nickname
+
+For example:
+sh sdcard/ultdroidn add com.dts.freefireth ff
+sh sdcard/ultdroidn add com.mobile.legends ml
+sh sdcard/ultdroidn add com.garena.game.codm codm
+###
+
+
+### [ To see your gamelist ]
+To see your gamelist, write:
+sh sdcard/ultdroidn gamelist
+###
+
+
+### [ To see your gameconfig list ]
+To see your gameconfig list, write:
+sh sdcard/ultdroidn gameconfig
+###
+
+
+### [ To remove a game from gamelist ]
+To remove a game from gamelist, write
+sh sdcard/ultdroidn remove nickname
+
+For example:
+sh sdcard/ultdroidn remove ff
+sh sdcard/ultdroidn remove ml
+sh sdcard/ultdroidn remove codm
+###
+
+
+### [ Full optimization mode ] ###############
+    [ Recommended ]
+To run game with full optimization mode, write:
+sh sdcard/ultdroidn nickname graphics
+
+For example:
+sh sdcard/ultdroidn ff medium
+
+Please provide the game package name and
+Available graphics modes are:
+[ low, medium, high, ultra, off ]
+###
+
+
+### [ Battery Saver Mode ] ###############
+To only activate battery saver mode, write:
+sh sdcard/ultdroidn saver
+###
+
+
+### [ Performance Mode ] ###############
+To only activate performance mode, write:
+sh sdcard/ultdroidn performance
+###
+
+
+### [ Hibernator Mode ] ###############
+To only activate hibernator mode, write:
+sh sdcard/ultdroidn hibernate
+###
+
+
+### [ Cache Cleaner Mode ] ###############
+To only activate cache cleaner mode, write:
+sh sdcard/ultdroidn cleancache
+###
+
+
+### [ Perfect Density mode ] ###############
+To only activate perfect density mode, write:
+sh sdcard/ultdroidn perfectdensity preset
+
+presets are [ low, medium, extreme, default ]
+
+For example:
+sh sdcard/ultdroidn perfectdensity low
+###
+
+
+### [ Google Play Services manager ] ###############
+To disable Google Play Services for extra RAM, write:
+sh sdcard/ultdroidn gms disable
+
+To enable Google Play Services, write:
+sh sdcard/ultdroidn gms enable
+###
+
+
+### [ Deviceinfo Mode ] ###############
+To only activate deviceinfo mode, write:
+sh sdcard/ultdroidn deviceinfo
+###
+
+"
+    exit 1
+fi
+
+
+# Check if package name, graphics mode are provided as arguments
+if [ $# -lt 2 ]; then
+    echo "
+help [ print this help text ]
+
+### [ To add a new game ]
+To add a new game, write:
+sh sdcard/ultdroidn add packagename nickname
+
+For example:
+sh sdcard/ultdroidn add com.dts.freefireth ff
+sh sdcard/ultdroidn add com.mobile.legends ml
+sh sdcard/ultdroidn add com.garena.game.codm codm
+###
+
+
+### [ To see your gamelist ]
+To see your gamelist, write:
+sh sdcard/ultdroidn gamelist
+###
+
+
+### [ To see your gameconfig list ]
+To see your gameconfig list, write:
+sh sdcard/ultdroid gameconfig
+###
+
+
+### [ To remove a game from gamelist ]
+To remove a game from gamelist, write
+sh sdcard/ultdroidn remove nickname
+
+For example:
+sh sdcard/ultdroidn remove ff
+sh sdcard/ultdroidn remove ml
+sh sdcard/ultdroidn remove codm
+###
+
+
+### [ Full optimization mode ] ###############
+    [ Recommended ]
+To run game with full optimization mode, write:
+sh sdcard/ultdroidn nickname graphics
+
+For example:
+sh sdcard/ultdroidn ff medium
+
+Please provide the game package name and
+Available graphics modes are:
+[ low, medium, high, ultra, off ]
+###
+
+
+### [ Battery Saver Mode ] ###############
+To only activate battery saver mode, write:
+sh sdcard/ultdroidn saver
+###
+
+
+### [ Performance Mode ] ###############
+To only activate performance mode, write:
+sh sdcard/ultdroidn performance
+###
+
+
+### [ Hibernator Mode ] ###############
+To only activate hibernator mode, write:
+sh sdcard/ultdroidn hibernate
+###
+
+
+### [ Cache Cleaner Mode ] ###############
+To only activate cache cleaner mode, write:
+sh sdcard/ultdroidn cleancache
+###
+
+
+### [ Perfect Density mode ] ###############
+To only activate perfect density mode, write:
+sh sdcard/ultdroidn perfectdensity preset
+
+presets are [ low, medium, extreme, default ]
+
+For example:
+sh sdcard/ultdroidn perfectdensity low
+###
+
+
+### [ Google Play Services manager ] ###############
+To disable Google Play Services for extra RAM, write:
+sh sdcard/ultdroidn gms disable
+
+To enable Google Play Services, write:
+sh sdcard/ultdroidn gms enable
+###
+
+
+### [ Deviceinfo Mode ] ###############
+To only activate deviceinfo mode, write:
+sh sdcard/ultdroidn deviceinfo
+###
+
+"
+
+    exit 1
+fi
+
+
+# Get the package name from the first argument
+gamepackage="$package"
+# Get the application name associated with the package name
+appname=$(pm list packages -f | grep "$gamepackage" | sed 's/.*=//' | sed 's/\./ /g' | awk '{print $NF}')
+# Map descriptive terms to their corresponding numerical values
+case "$2" in
+    "low")
+
+        downscaleFactor=0.55
+gamepackage="$package"
+
+fps="$(dumpsys display | grep -o -E 'fps=[0-9]+(\.[0-9]+)?' | cut -d'=' -f2 | sort -nr | head -n1 | awk '{printf("%d\n", ($1+0.5)/1)}')"
+
+echo "
+Game Mode Interventions section:"
+sleep 0.1
+echo "■ Detecting highest FPS in integer for assigning"
+# Detect highest FPS in integer
+fps="$(dumpsys display | grep -o -E 'fps=[0-9]+(\.[0-9]+)?' | cut -d'=' -f2 | sort -nr | head -n1 | awk '{printf("%d\n", ($1+0.5)/1)}')"
+
+echo "■ Performance mode is being set for: [ $appname ]"
+
+echo "■ Locked $appname Framerate to: [ $fps FPS ]"
+
+echo "■ Setting Interventions "
+echo "■ Downscale Factor: [ $downscaleFactor ] [ low ]"
+echo "■ Framerate: [ $fps FPS ]"
+# Evaluate Interventions
+/system/bin/device_config put game_overlay "$gamepackage" mode=2,downscaleFactor="$downscaleFactor",fps="$fps":mode=3,downscaleFactor="$downscaleFactor",fps="$fps"
+sleep 0.1
+echo "■ Activating Gamemode with modified settings "
+# Change between game modes
+/system/bin/cmd game mode performance "$gamepackage"
+sleep 0.1
+echo "[ cmd game mode performance "$gamepackage" ]"
+sleep 1
+
+        ;;
+    "medium")
+
+        downscaleFactor=0.65
+gamepackage="$package"
+
+fps="$(dumpsys display | grep -o -E 'fps=[0-9]+(\.[0-9]+)?' | cut -d'=' -f2 | sort -nr | head -n1 | awk '{printf("%d\n", ($1+0.5)/1)}')"
+
+echo "
+Game Mode Interventions section:"
+sleep 0.1
+echo "■ Detecting highest FPS in integer for assigning"
+# Detect highest FPS in integer
+fps="$(dumpsys display | grep -o -E 'fps=[0-9]+(\.[0-9]+)?' | cut -d'=' -f2 | sort -nr | head -n1 | awk '{printf("%d\n", ($1+0.5)/1)}')"
+
+echo "■ Performance mode is being set for: [ $appname ]"
+
+echo "■ Locked $appname Framerate to: [ $fps FPS ]"
+
+echo "■ Setting Interventions "
+echo "■ Downscale Factor: [ $downscaleFactor ] [ medium ]"
+echo "■ Framerate: [ $fps FPS ]"
+# Evaluate Interventions
+/system/bin/device_config put game_overlay "$gamepackage" mode=2,downscaleFactor="$downscaleFactor",fps="$fps":mode=3,downscaleFactor="$downscaleFactor",fps="$fps"
+sleep 0.1
+echo "■ Activating Gamemode with modified settings "
+# Change between game modes
+/system/bin/cmd game mode performance "$gamepackage"
+sleep 0.1
+echo "[ cmd game mode performance "$gamepackage" ]"
+sleep 1
+
+        ;;
+    "high")
+
+        downscaleFactor=0.75
+gamepackage="$package"
+
+fps="$(dumpsys display | grep -o -E 'fps=[0-9]+(\.[0-9]+)?' | cut -d'=' -f2 | sort -nr | head -n1 | awk '{printf("%d\n", ($1+0.5)/1)}')"
+
+echo "
+Game Mode Interventions section:"
+sleep 0.1
+echo "■ Detecting highest FPS in integer for assigning"
+# Detect highest FPS in integer
+fps="$(dumpsys display | grep -o -E 'fps=[0-9]+(\.[0-9]+)?' | cut -d'=' -f2 | sort -nr | head -n1 | awk '{printf("%d\n", ($1+0.5)/1)}')"
+
+echo "■ Performance mode is being set for: [ $appname ]"
+
+echo "■ Locked $appname Framerate to: [ $fps FPS ]"
+
+echo "■ Setting Interventions "
+echo "■ Downscale Factor: [ $downscaleFactor ] [ high ]"
+echo "■ Framerate: [ $fps FPS ]"
+# Evaluate Interventions
+/system/bin/device_config put game_overlay "$gamepackage" mode=2,downscaleFactor="$downscaleFactor",fps="$fps":mode=3,downscaleFactor="$downscaleFactor",fps="$fps"
+sleep 0.1
+echo "■ Activating Gamemode with modified settings "
+# Change between game modes
+/system/bin/cmd game mode performance "$gamepackage"
+sleep 0.1
+echo "[ cmd game mode performance "$gamepackage" ]"
+sleep 1
+
+        ;;
+    "ultra")
+
+        downscaleFactor=0.85
+gamepackage="$package"
+
+fps="$(dumpsys display | grep -o -E 'fps=[0-9]+(\.[0-9]+)?' | cut -d'=' -f2 | sort -nr | head -n1 | awk '{printf("%d\n", ($1+0.5)/1)}')"
+
+echo "
+Game Mode Interventions section:"
+sleep 0.1
+echo "■ Detecting highest FPS in integer for assigning"
+# Detect highest FPS in integer
+fps="$(dumpsys display | grep -o -E 'fps=[0-9]+(\.[0-9]+)?' | cut -d'=' -f2 | sort -nr | head -n1 | awk '{printf("%d\n", ($1+0.5)/1)}')"
+
+echo "■ Performance mode is being set for: [ $appname ]"
+
+echo "■ Locked $appname Framerate to: [ $fps FPS ]"
+
+echo "■ Setting Interventions "
+echo "■ Downscale Factor: [ $downscaleFactor ] [ ultra ]"
+echo "■ Framerate: [ $fps FPS ]"
+# Evaluate Interventions
+/system/bin/device_config put game_overlay "$gamepackage" mode=2,downscaleFactor="$downscaleFactor",fps="$fps":mode=3,downscaleFactor="$downscaleFactor",fps="$fps"
+sleep 0.1
+echo "■ Activating Gamemode with modified settings "
+# Change between game modes
+/system/bin/cmd game mode performance "$gamepackage"
+sleep 0.1
+echo "[ cmd game mode performance "$gamepackage" ]"
+sleep 1
+
+        ;;
+    "off")
+
+gamepackage="$package"
+
+echo "
+Game Mode Interventions Deactivation:"
+sleep 0.1
+    echo "■ Deleting game_config for: [ $gamepackage ]"
+    echo ""
+    /system/bin/device_config delete game_overlay "$gamepackage"
+sleep 0.1
+    /system/bin/cmd game mode standard "$gamepackage"
+sleep 0.1
+    echo "[ cmd game mode standard "$gamepackage" ]"
+sleep 1
+        ;;
+
+    *)
+        echo "
+###
+Error: Please choose from
+[ low, medium, high, ultra, off ]
+###
+
+"
+
+        exit 1
+        ;;
+esac
+
+echo "
+App Force Stopper and Hibernator Section:"
+sleep 0.1
+
+echo "■ Excluding system and essential core apps"
+# Define the keyword patterns to exclude essential system apps
+exclude_patterns="system|systemui|brevent|com.google.android.providers.media.module|telephony|dialer|wallpaper|miui|media|com.android.shell"
+
+echo "■ Fetching safe packages list"
+# Get the list of safe packages to force stop
+safe_packages=$(pm list packages | grep -Ev "$exclude_patterns")
+
+echo "■ Force stopping apps that are safe"
+echo "■ Hibernating all apps"
+echo ""
+# Iterate over each package and force stop
+echo "$safe_packages" | while read -r package; do
+    # Extract the package name by removing the 'package:' prefix
+    package_name=$(echo "$package" | sed -e 's/package://')
+    echo "Hibernated:[ $package_name ]"
+    am force-stop $package_name
+    cmd app_hibernation set-state $package_name true
+done
+sleep 0.1
+
+
+echo "
+Running systemwide optimization commands:"
+sleep 0.1
+echo "■ Setting Thermalservice status to 0"
+cmd thermalservice override-status 0
+echo "■ Setting powermode to [ Performance ]"
+cmd power set-mode 0
+echo "■ Enabling fixed performance mode "
+cmd power set-fixed-performance-mode-enabled true
+echo "■ Disabling Adaptive power saver for more performance"
+cmd power set-adaptive-power-saver-enabled false
+echo "■ Disabling MSAA to focus processing power for performance"
+setprop debug.egl.force_msaa false
+echo "■ Disabling HDR types for more performance"
+cmd display set-user-disabled-hdr-types 1 2 3 4
+echo "■ Disabling stats collection"
+cmd looper_stats disable
+echo "■ Setting hardware renderer to SkiaGl "
+setprop debug.hwui.renderer skiagl
+echo "■ Allowing Refresh rate overrides"
+setprop debug.display.allow_non_native_refresh_rate_override 1
+sleep 1
+echo "
+■ Authentic Debug commands for extra performance:"
+sleep 0.1
+setprop debug.adbd.logging 0
+echo "[ debug.adbd.logging 0 ]"
+
+setprop debug.debuggerd.disable 1
+echo "[ debug.debuggerd.disable 1 ]"
+
+setprop debug.debuggerd.wait_for_debugger 0
+echo "[ debug.debuggerd.wait_for_debugger 0 ]"
+
+setprop debug.debuggerd.wait_for_gdb 0
+echo "[ debug.debuggerd.wait_for_gdb 0 ]"
+
+setprop debug.dumpstate.flags 0x04
+echo "[ debug.dumpstate.flags 0x04 ]"
+
+setprop debug.generate-debug-info 0
+echo "[ debug.generate-debug-info 0 ]"
+
+setprop debug.hdr.gpu.runtime 0
+echo "[ debug.hdr.gpu.runtime 0 ]"
+
+setprop debug.ld.all 0
+echo "[ debug.ld.all 0 ]"
+
+setprop debug.hwui.level 0
+echo "[ debug.hwui.level 0 ]"
+
+setprop debug.hwui.capture_skp_enabled 0
+echo "[ debug.hwui.capture_skp_enabled 0 ]"
+
+setprop debug.hwui.print_config 0
+echo "[ debug.hwui.print_config 0 ]"
+
+setprop debug.hwui.show_non_rect_clip 0
+echo "[ debug.hwui.show_non_rect_clip 0 ]"
+
+setprop debug.hwui.capture_skp_frames 0
+echo "[ debug.hwui.capture_skp_frames 0 ]"
+
+setprop debug.hwui.drawing_enabled 1
+echo "[ debug.hwui.drawing_enabled 1 ]"
+
+setprop debug.hwui.filter_test_overhead 0
+echo "[ debug.hwui.filter_test_overhead 0 ]"
+
+setprop debug.hwui.overdraw 0
+echo "[ debug.hwui.overdraw 0 ]"
+
+setprop debug.hwui.profile false
+echo "[ debug.hwui.profile false ]"
+
+setprop debug.hwui.show_dirty_regions 0
+echo "[ debug.hwui.show_dirty_regions 0 ]"
+
+setprop debug.hwui.show_layers_updates 0
+echo "[ debug.hwui.show_layers_updates 0 ]"
+
+setprop debug.hwui.skia_atrace_enabled 0
+echo "[ debug.hwui.skia_atrace_enabled 0 ]"
+
+setprop debug.hwui.skip_empty_damage 1
+echo "[ debug.hwui.skip_empty_damage 1 ]"
+
+setprop debug.hwui.profile 0
+echo "[ debug.hwui.profile 0 ]"
+
+setprop debug.hwui.show_dirty_regions 0
+echo "[ debug.hwui.show_dirty_regions 0 ]"
+
+setprop debug.hwui.show_layers_updates 0
+echo "[ debug.hwui.show_layers_updates 0 ]"
+
+setprop debug.hwui.skia_atrace_enabled 0
+echo "[ debug.hwui.skia_atrace_enabled 0 ]"
+
+setprop debug.hwui.skip_empty_damage 1
+echo "[ debug.hwui.skip_empty_damage 1 ]"
+
+setprop debug.hwui.use_partial_updates 0
+echo "[ debug.hwui.use_partial_updates 0 ]"
+
+setprop debug.hwui.vulkan.validation 0
+echo "[ debug.hwui.vulkan.validation 0 ]"
+
+setprop debug.hwui.use_buffer_age 1
+echo "[ debug.hwui.use_buffer_age 1 ]"
+
+setprop debug.hwui.use_hint_manager 1
+echo "[ debug.hwui.use_hint_manager 1 ]"
+
+setprop debug.hwui.use_partial_updates 1
+echo "[ debug.hwui.use_partial_updates 1 ]"
+
+setprop debug.hwui.webview_overlays_enabled 1
+echo "[ debug.hwui.webview_overlays_enabled 1 ]"
+
+setprop debug.incremental.always_enable_read_timeouts_for_system_dataloaders 0
+echo "[ debug.incremental.always_enable_read_timeouts_for_system_dataloaders 0 ]"
+
+setprop debug.incremental.enable_read_timeouts_after_install 0
+echo "[ debug.incremental.enable_read_timeouts_after_install 0 ]"
+
+setprop debug.incremental.enforce_readlogs_max_interval_for_system_dataloaders 0
+echo "[ debug.incremental.enforce_readlogs_max_interval_for_system_dataloaders 0 ]"
+
+setprop debug.layout 0
+echo "[ debug.layout 0 ]"
+
+setprop debug.perfmond.atrace 0
+echo "[ debug.perfmond.atrace 0 ]"
+
+setprop debug.rs.debug 0
+echo "[ debug.rs.debug 0 ]"
+
+setprop debug.rs.arm-no-hwdiv 0
+echo "[ debug.rs.arm-no-hwdiv 0 ]"
+
+setprop debug.rs.debug 0
+echo "[ debug.rs.debug 0 ]"
+
+setprop debug.rs.script false
+echo "[ debug.rs.script false ]"
+
+setprop debug.rs.arm-no-tune-for-cpu 0
+echo "[ debug.rs.arm-no-tune-for-cpu 0 ]"
+
+setprop debug.rs.forcecompat 0
+echo "[ debug.rs.forcecompat 0 ]"
+
+setprop debug.rs.forcerecompile 0
+echo "[ debug.rs.forcerecompile 0 ]"
+
+setprop debug.rs.profile 0
+echo "[ debug.rs.profile 0 ]"
+
+setprop debug.rs.script 0
+echo "[ debug.rs.script 0 ]"
+
+setprop debug.rs.shader 0
+echo "[ debug.rs.shader 0 ]"
+
+setprop debug.rs.shader.attributes 0
+echo "[ debug.rs.shader.attributes 0 ]"
+
+setprop debug.rs.shader.uniforms 0
+echo "[ debug.rs.shader.uniforms 0 ]"
+
+setprop debug.rs.visual 0
+echo "[ debug.rs.visual 0 ]"
+
+setprop debug.sensors 0
+echo "[ debug.sensors 0 ]"
+
+setprop debug.stagefright.c2inputsurface 0
+echo "[ debug.stagefright.c2inputsurface 0 ]"
+
+setprop debug.stagefright.omx-debug false
+echo "[ debug.stagefright.omx-debug false ]"
+
+setprop debug.stagefright.ccodec 0
+echo "[ debug.stagefright.ccodec 0 ]"
+
+setprop debug.stagefright.profilecodec 0
+echo "[ debug.stagefright.profilecodec 0 ]"
+
+setprop debug.graphics.gpu.profiler.perfetto 0
+echo "[ debug.graphics.gpu.profiler.perfetto 0 ]"
+
+setprop debug.gralloc.verbose_alloc 0
+echo "[ debug.gralloc.verbose_alloc 0 ]"
+
+setprop debug.hwc.otf 1
+echo "[ debug.hwc.otf 1 ]"
+
+setprop debug.hyper.enable 0
+echo "[ debug.hyper.enable 0 ]"
+
+setprop debug.tflite.trace 0
+echo "[ debug.tflite.trace 0 ]"
+
+setprop debug.assert 0
+echo "[ debug.assert 0 ]"
+
+setprop debug.checkjni 0
+echo "[ debug.checkjni 0 ]"
+
+setprop debug.child_notifs 0
+echo "[ debug.child_notifs 0 ]"
+
+setprop debug.choreographer.frametime 0
+echo "[ debug.choreographer.frametime 0 ]"
+
+setprop debug.choreographer.vsync 0
+echo "[ debug.choreographer.vsync 0 ]"
+
+setprop debug.enable_enhanced_calling 1
+echo "[ debug.enable_enhanced_calling 1 ]"
+
+setprop debug.force_low_ram 0
+echo "[ debug.force_low_ram 0 ]"
+
+setprop debug.hbmc.enforce.vrr 1
+echo "[ debug.hbmc.enforce.vrr 1 ]"
+
+setprop debug.hbmc.log 0
+echo "[ debug.hbmc.log 0 ]"
+
+setprop debug.hdr.avg 0
+echo "[ debug.hdr.avg 0 ]"
+
+setprop debug.hdr.enforce.panel_brt 0
+echo "[ debug.hdr.enforce.panel_brt 0 ]"
+
+setprop debug.hdr.log.service 0
+echo "[ debug.hdr.log.service 0 ]"
+
+setprop debug.ids.enable 0
+echo "[ debug.ids.enable 0 ]"
+
+setprop debug.jni.logging 0
+echo "[ debug.jni.logging 0 ]"
+
+setprop debug.mate.log.safe_string 0
+echo "[ debug.mate.log.safe_string 0 ]"
+
+setprop debug.mate.log.service 0
+echo "[ debug.mate.log.service 0 ]"
+
+setprop debug.orientation.log 0
+echo "[ debug.orientation.log 0 ]"
+
+setprop debug.servicemanager.log_calls 0
+echo "[ debug.servicemanager.log_calls 0 ]"
+
+setprop debug.skia.force_sw_gles 0
+echo "[ debug.skia.force_sw_gles 0 ]"
+
+setprop debug.synclog 0
+echo "[ debug.synclog 0 ]"
+
+setprop debug.sys.looper_stats_enabled 0
+echo "[ debug.sys.looper_stats_enabled 0 ]"
+
+setprop debug.tracing.screen_brightness 0
+echo "[ debug.tracing.screen_brightness 0 ]"
+
+setprop debug.tracing.screen_state 0
+echo "[ debug.tracing.screen_state 0 ]"
+
+setprop debug.track-associations 0
+echo "[ debug.track-associations 0 ]"
+
+setprop debug.velocitytracker.alt 0
+echo "[ debug.velocitytracker.alt 0 ]"
+
+setprop debug.sys.noschedgroups 0
+echo "[ debug.sys.noschedgroups 0 ]"
+
+setprop debug.angle.validation 0
+echo "[ debug.angle.validation 0 ]"
+
+setprop debug.tracing.screen_brightness 0
+echo "[ debug.tracing.screen_brightness 0 ]"
+
+setprop debug.tracing.screen_state 0
+echo "[ debug.tracing.screen_state 0 ]"
+
+setprop debug.renderengine.skia_atrace_enabled 0
+echo "[ debug.renderengine.skia_atrace_enabled 0 ]"
+
+setprop debug.sf.auto_latch_unsignaled 1
+echo "[ debug.sf.auto_latch_unsignaled 1 ]"
+
+setprop debug.sf.latch_unsignaled 1
+echo "[ debug.sf.latch_unsignaled 1 ]"
+
+setprop debug.sf.ddms 0
+echo "[ debug.sf.ddms 0 ]"
+
+setprop debug.sf.disable_client_composition_cache 0
+echo "[ debug.sf.disable_client_composition_cache 0 ]"
+
+setprop debug.sf.enable_adpf_cpu_hint 1
+echo "[ debug.sf.enable_adpf_cpu_hint 1 ]"
+
+setprop debug.sf.enable_egl_image_tracker false
+echo "[ debug.sf.enable_egl_image_tracker false ]"
+
+setprop debug.sf.enable_cached_set_render_scheduling 1
+echo "[ debug.sf.enable_cached_set_render_scheduling 1 ]"
+
+setprop debug.sf.enable_gl_backpressure 1
+echo "[ debug.sf.enable_gl_backpressure 1 ]"
+
+setprop debug.sf.enable_hwc_vds 1
+echo "[ debug.sf.enable_hwc_vds 1 ]"
+
+setprop debug.sf.enable_layer_caching 1
+echo "[ debug.sf.enable_layer_caching 1 ]"
+
+setprop debug.sf.enable_planner_prediction 0
+echo "[ debug.sf.enable_planner_prediction 0 ]"
+
+setprop debug.sf.enable_transaction_tracing 0
+echo "[ debug.sf.enable_transaction_tracing 0 ]"
+
+setprop debug.sf.frame_rate_multiple_threshold 2
+echo "[ debug.sf.frame_rate_multiple_threshold 2 ]"
+
+setprop debug.sf.gpuclock high
+echo "[ debug.sf.gpuclock high ]"
+
+setprop debug.sf.hwc.min.duration 0
+echo "[ debug.sf.hwc.min.duration 0 ]"
+
+setprop debug.sf.hwc_service_name default
+echo "[ debug.sf.hwc_service_name default ]"
+
+setprop debug.sf.kernel_idle_timer_update_overlay 0
+echo "[ debug.sf.kernel_idle_timer_update_overlay 0 ]"
+
+setprop debug.sf.layer_caching_active_layer_timeout_ms 800
+echo "[ debug.sf.layer_caching_active_layer_timeout_ms 800 ]"
+
+setprop debug.sf.layer_caching_highlight 0
+echo "[ debug.sf.layer_caching_highlight 0 ]"
+
+setprop debug.sf.layerdump 0
+echo "[ debug.sf.layerdump 0 ]"
+
+setprop debug.sf.luma_sampling 1
+echo "[ debug.sf.luma_sampling 1 ]"
+
+setprop debug.sf.max_igbp_list_size 10
+echo "[ debug.sf.max_igbp_list_size 10 ]"
+
+setprop debug.sf.normalize_hint_session_durations 1
+echo "[ debug.sf.normalize_hint_session_durations 1 ]"
+
+setprop debug.sf.predict_hwc_composition_strategy 1
+echo "[ debug.sf.predict_hwc_composition_strategy 1 ]"
+
+setprop debug.sf.set_idle_timer_ms 5000
+echo "[ debug.sf.set_idle_timer_ms 5000 ]"
+
+setprop debug.sf.show_predicted_vsync 0
+echo "[ debug.sf.show_predicted_vsync 0 ]"
+
+setprop debug.sf.showupdates 0
+echo "[ debug.sf.showupdates 0 ]"
+
+setprop debug.sf.trace_hint_sessions 0
+echo "[ debug.sf.trace_hint_sessions 0 ]"
+
+setprop debug.sf.treat_170m_as_sRGB 0
+echo "[ debug.sf.treat_170m_as_sRGB 0 ]"
+
+setprop debug.sf.treble_testing_override 0
+echo "[ debug.sf.treble_testing_override 0 ]"
+
+setprop debug.sf.use_frame_rate_priority 1
+echo "[ debug.sf.use_frame_rate_priority 1 ]"
+
+setprop debug.sf.use_phase_offsets_as_durations 0
+echo "[ debug.sf.use_phase_offsets_as_durations 0 ]"
+
+setprop debug.sf.vsp_trace 0
+echo "[ debug.sf.vsp_trace 0 ]"
+
+setprop debug.sf.vsync_reactor_ignore_present_fences 0
+echo "[ debug.sf.vsync_reactor_ignore_present_fences 0 ]"
+
+setprop debug.sf.vsync_trace_detailed_info 0
+echo "[ debug.sf.vsync_trace_detailed_info 0 ]"
+
+setprop debug.sf.layer_history_trace 0
+echo "[ debug.sf.layer_history_trace 0 ]"
+
+setprop debug.angle.validation 0
+echo "[ debug.angle.validation 0 ]"
+
+setprop debug.c2.use_dmabufheaps 1
+echo "[ debug.c2.use_dmabufheaps 1 ]"
+
+setprop debug.contacts.ksad 0
+echo "[ debug.contacts.ksad 0 ]"
+
+setprop debug.cp2.scan_all_packages 0
+echo "[ debug.cp2.scan_all_packages 0 ]"
+
+setprop debug.egl.traceGpuCompletion 0
+echo "[ debug.egl.traceGpuCompletion 0 ]"
+
+setprop debug.egl.callstack 0
+echo "[ debug.egl.callstack 0 ]"
+
+setprop debug.egl.finish 0
+echo "[ debug.egl.finish 0 ]"
+
+setprop debug.egl.trace 0
+echo "[ debug.egl.trace 0 ]"
+
+setprop debug.extractor.ignore_version 0
+echo "[ debug.extractor.ignore_version 0 ]"
+
+setprop debug.gles.layers 0
+echo "[ debug.gles.layers 0 ]"
+
+setprop debug.layout false
+echo "[ debug.layout false ]"
+
+setprop debug.log false
+echo "[ debug.log false ]"
+
+setprop debug.perfmond.atrace 0
+echo "[ debug.perfmond.atrace 0 ]"
+
+setprop debug.generate-debug-info false
+echo "[ debug.generate-debug-info false ]"
+
+sleep 1
+
+echo "
+Checking if device supports OpenCl:"
+sleep 0.1
+# List of files to check for
+files=(
+    "/system/vendor/lib/libPVROCL.so"
+    "/system/vendor/lib/egl/libGLES_mali.so"
+    "/system/lib/egl/libGLES_mali.so"
+    "/system/vendor/lib/libOpenCL.so"
+    "/system/lib/libOpenCL.so"
+)
+echo "■ Scanning for files in libraries:
+"/system/vendor/lib/libPVROCL.so"
+"/system/vendor/lib/egl/libGLES_mali.so"
+"/system/lib/egl/libGLES_mali.so"
+"/system/vendor/lib/libOpenCL.so"
+"/system/lib/libOpenCL.so""
+
+# Function to check if OpenCl supports
+check_files() {
+    for file in "${files[@]}"; do
+        if [ -e "$file" ]; then
+            return 0 # At least one file exists
+      echo "■ At least one of them exists"
+        fi
+    done
+    return 1 # None of the files exist
+  echo "■ None of the files exist"
+}
+
+# Execute command if OpenCl supports
+if check_files; then
+    # Command to enable OpenCl if it supports
+    echo "■ Device supports OpenCl, Enabling"
+setprop debug.rs.default-CPU-driver cl
+echo "[ debug.rs.default-CPU-driver cl ]"
+else
+    echo "■ Device does not support OpenCl"
+fi
+sleep 0.1
+
+echo "
+Checking total threads on device:"
+sleep 0.1
+
+echo "■ Fetching info from:
+/proc/cpuinfo"
+threads="$(cat /proc/cpuinfo | grep processor | wc -l)"
+echo "■ Total threads on device: [ $threads ]"
+sleep 0.1
+
+echo "■ Setting max thread count to [ $threads ]"
+setprop debug.rs.max-threads $threads
+echo "[ debug.rs.max-threads $threads ]"
+sleep 0.1
+
+echo "
+SurfaceFlinger Perfect Durations section:"
+sleep 0.1
+echo "■ Fetching display refresh rate"
+
+fps="$(dumpsys display | grep -o -E 'fps=[0-9]+(\.[0-9]+)?' | cut -d'=' -f2 | sort -nr | head -n1 | awk '{printf("%d\n", ($1+0.5)/1)}')"
+
+echo "■ Display refresh rate is [ $fps Hz ]"
+
+# Calculations to find optimal durations for this device
+echo "■ Calculating optimal render durations"
+echo "■ Calculating optimal early durations"
+echo "■ Calculating optimal early phase offset durations"
+echo "■ Calculating optimal late phase offset durations"
+echo "■ Calculating optimal vsync durations"
+
+echo "■ Calculating Frame cycle [ 1/$fps ]"
+
+# Calculating [ 1 / $fps ]
+frame_cycle=$(echo "scale=10; 1 / $fps" | bc)
+
+echo "■ Frame cycle is [ $frame_cycle seconds ]"
+
+echo "■ Converting Frame cycle in seconds to nanoseconds"
+# Converting the interval to nanoseconds 
+# (1 second = 1,000,000,000 nanoseconds)
+frame_cycle_ns=$(printf "%.0f" $(echo "$frame_cycle * 1000000000" | bc | cut -d'.' -f1))
+
+echo "■ Frame cycle in nanoseconds is [ $frame_cycle_ns nanoseconds ]"
+
+early_app_gl_phase_offset=$(printf "%.0f" $(echo "$frame_cycle_ns / 16.666666" | bc))
+
+app_phase_offset=$(printf "%.0f" $(echo "$frame_cycle_ns / 8.333333" | bc))
+
+early_phase_offset=$(printf "%.0f" $(echo "$frame_cycle_ns / 4.16666665" | bc))
+
+early_duration=$(printf "%.0f" $(echo "$frame_cycle_ns / 3.3333332" | bc))
+
+sf_early_phase_offset=$(printf "%.0f" $(echo "$frame_cycle_ns / 2.7777776667" | bc))
+
+region_sampling_period=$(printf "%.0f" $(echo "$frame_cycle_ns / 1.6666666" | bc))
+
+region_sampling_timer=$(printf "%.0f" $(echo "$frame_cycle_ns / 0.8333333" | bc))
+
+echo "
+■ Calculating Perfect durations"
+echo "
+■ Calculation results:
+early_app_gl_phase_offset = $early_app_gl_phase_offset
+app_phase_offset = $app_phase_offset
+early_phase_offset = $early_phase_offset
+early_duration = $early_duration
+sf_early_phase_offset = $sf_early_phase_offset
+region_sampling_period = $region_sampling_period
+region_sampling_timer = $region_sampling_timer
+"
+
+echo "
+■ Assigning Perfect durations to SurfaceFlinger strings
+"
+
+setprop debug.sf.cached_set_render_duration_ns $early_duration
+echo "[ debug.sf.cached_set_render_duration_ns:
+[ $early_duration ]"
+
+setprop debug.sf.early.app.duration $early_duration
+echo "[ debug.sf.early.app.duration:
+[ $early_duration ]"
+
+setprop debug.sf.early.sf.duration $early_duration
+echo "[ debug.sf.early.sf.duration:
+[ $early_duration ]"
+
+setprop debug.sf.earlyGl.app.duration $early_duration
+echo "[ debug.sf.earlyGl.app.duration:
+[ $early_duration ]"
+
+setprop debug.sf.earlyGl.sf.duration $early_duration
+echo "[ debug.sf.earlyGl.sf.duration:
+[ $early_duration ]"
+
+setprop debug.sf.early_app_phase_offset_ns $app_phase_offset
+echo "[ debug.sf.early_app_phase_offset_ns:
+[ $app_phase_offset ]"
+
+setprop debug.sf.early_gl_app_phase_offset_ns $app_phase_offset
+echo "[ debug.sf.early_gl_app_phase_offset_ns:
+[ $app_phase_offset ]"
+
+setprop debug.sf.early_gl_phase_offset_ns $sf_early_phase_offset
+echo "[ debug.sf.early_gl_phase_offset_ns:
+[ $sf_early_phase_offset ]"
+
+setprop debug.sf.early_phase_offset_ns $sf_early_phase_offset
+echo "[ debug.sf.early_phase_offset_ns:
+[ $sf_early_phase_offset ]"
+
+setprop debug.sf.high_fps_early_app_phase_offset_ns $early_app_gl_phase_offset
+echo "[ debug.sf.high_fps_early_app_phase_offset_ns:
+[ $early_app_gl_phase_offset ]"
+
+setprop debug.sf.high_fps_early_gl_app_phase_offset_ns $early_app_gl_phase_offset
+echo "[ debug.sf.high_fps_early_gl_app_phase_offset_ns:
+[ $early_app_gl_phase_offset ]"
+
+setprop debug.sf.high_fps_early_gl_phase_offset_ns $early_phase_offset
+echo "[ debug.sf.high_fps_early_gl_phase_offset_ns:
+[ $early_phase_offset ]"
+
+setprop debug.sf.high_fps_early_phase_offset_ns $early_phase_offset
+echo "[ debug.sf.high_fps_early_phase_offset_ns:
+[ $early_phase_offset ]"
+
+setprop debug.sf.high_fps_late_app_phase_offset_ns $region_sampling_period
+echo "[ debug.sf.high_fps_late_app_phase_offset_ns:
+[ $region_sampling_period ]"
+
+setprop debug.sf.high_fps_late_sf_phase_offset_ns $region_sampling_period
+echo "[ debug.sf.high_fps_late_sf_phase_offset_ns:
+[ $region_sampling_period ]"
+
+setprop debug.sf.phase_offset_threshold_for_next_vsync_ns $region_sampling_period
+echo "[ debug.sf.phase_offset_threshold_for_next_vsync_ns:
+[ $region_sampling_period ]"
+
+setprop debug.sf.region_sampling_duration_ns $early_duration
+echo "[ debug.sf.region_sampling_duration_ns:
+[ $early_duration ]"
+
+setprop debug.sf.region_sampling_period_ns $region_sampling_period
+echo "[ debug.sf.region_sampling_period_ns:
+[ $region_sampling_period ]"
+
+setprop debug.sf.region_sampling_timer_timeout_ns $region_sampling_timer
+echo "[ debug.sf.region_sampling_timer_timeout_ns:
+[ $region_sampling_timer ]"
+
+setprop debug.sf.late.app.duration $region_sampling_period
+echo "[ debug.sf.late.app.duration:
+[ $region_sampling_period ]"
+
+setprop debug.sf.late.sf.duration $region_sampling_period
+echo "[ debug.sf.late.sf.duration:
+[ $region_sampling_period ]"
+
+echo "
+■ Optimal duration values set for your device"
+sleep 0.1
+
+echo "
+■ Provided game package name: 
+  [ $gamepackage ]"
+
+echo "
+Standby bucket list [ Active ]:"
+am set-standby-bucket $gamepackage active
+echo "■ Added $gamepackage to standby bucket list"
+echo "[ am set-standby-bucket $gamepackage active ]"
+sleep 0.1
+
+echo "
+Deviceidle section:"
+echo "■ Adding $gamepackage to deviceidle whitelist"
+cmd deviceidle whitelist +$gamepackage
+echo "[ cmd deviceidle whitelist +$gamepackage ]"
+sleep 0.1
+
+echo "
+■ Removing other user apps from deviceidle whitelist"
+cmd deviceidle whitelist $(cmd deviceidle whitelist | grep -v "^system" | grep -v $gamepackage | awk -F, '{print "-" $2}' | tr '\n' ' ')>/dev/null 2>&1&
+
+echo "■ Activating idlemode for all other user apps"
+cmd deviceidle force-idle deep
+echo "[ cmd deviceidle force-idle deep ]"
+sleep 1
+
+echo "
+Cache cleaner section:"
+log_message() {
+  local message="$1"
+  echo "$message"
+}
+
+get_available_space() {
+  df /data | awk 'NR==2{print $4}'
+}
+
+format_size() {
+  local size=$1
+  if [ "$size" -lt 1024 ]; then
+    echo "${size} KB"
+  elif [ "$size" -lt 1048576 ]; then
+    echo "$((size / 1024)) MB"
+  else
+    echo "$((size / 1048576)) GB"
+  fi
+}
+
+clean_cache() {
+  pm trim-caches 999G internal
+  if [ $? -ne 0 ]; then
+    log_message "ERROR: Failed to trim caches."
+    exit 1
+  fi
+}
+
+check_environment() {
+  if ! command -v pm > /dev/null; then
+    log_message "ERROR: 'pm' command not found. Ensure the script is running in an Android environment."
+    exit 1
+  fi
+  if ! command -v df > /dev/null; then
+    log_message "ERROR: 'df' command not found."
+    exit 1
+  fi
+}
+
+main() {
+  log_message "■ Starting cache optimization."
+
+  check_environment
+
+  available_before=$(get_available_space)
+  if [ -z "$available_before" ]; then
+    log_message "ERROR: Unable to retrieve available space before cleaning."
+    exit 1
+  fi
+
+  log_message "■ Available space before cleaning: [ $(format_size $available_before) ]"
+
+  clean_cache
+
+  available_after=$(get_available_space)
+  if [ -z "$available_after" ]; then
+    log_message "ERROR: Unable to retrieve available space after cleaning."
+    exit 1
+  fi
+
+  log_message "■ Available space after cleaning: [ $(format_size $available_after) ]"
+
+  cleared_cache=$((available_after - available_before))
+
+  if [ "$cleared_cache" -ge 0 ]; then
+    log_message "■ Cleared cache: [ $(format_size $cleared_cache) ]"
+  else
+    log_message "■ No cache found or cleaned."
+  fi
+  
+  log_message "■ Cache optimization completed."
+  
+}
+
+main "$@"
+sleep 0.1
+
+echo "
+Game asset preloader section:"
+sleep 0.1
+package_name="$gamepackage"
+
+get_asset_dir() {
+  local package=$gamepackage
+  local asset_path=$(pm path "$package" | awk -F':' '{print $2}')
+  
+  if [ -n "$asset_path" ]; then
+    local asset_dir=$(dirname "$asset_path")
+    echo "■ Asset location found for $package: $asset_dir"
+    echo "$asset_dir"
+    echo "[ $(pm path "$package" | awk -F':' '/.apk$/ {print $2}' | awk -F'/' '{print $NF}')]"
+  else
+    echo "■ Asset location not found for $package"
+    return 1
+  fi
+}
+
+preload_libs() {
+  local package=$gamepackage
+  local lib_dir="/data/app/${package}/lib/arm64"
+
+  if [ -d "$lib_dir" ]; then
+    for lib in "$lib_dir"/*; do
+      LD_PRELOAD="$LD_PRELOAD:$lib"
+    done
+    echo "■ Libraries have been preloaded for [ $package ]"
+  else
+    echo "■ No libraries found for [ $package ]"
+  fi
+}
+
+preload_assets() {
+  local package=$gamepackage
+  local asset_dir=$asset_dir
+  local asset_path="${asset_dir}/assets"
+
+  if [ -d "$asset_path" ]; then
+    for asset in "$asset_path"/*; do
+      if [ -e "$asset" ]; then
+        LD_PRELOAD="$LD_PRELOAD:$asset"
+        echo "Processing asset $asset ..."
+      fi
+    done
+    echo "■ Finished processing assets for package [ $package ]"
+  else
+    echo "■ No assets found for package [ $package. ]"
+  fi
+}
+
+preload_game() {
+  local package=$gamepackage
+
+  asset_dir=$(get_asset_dir "$package")
+  if [ $? -ne 0 ]; then
+    return 1
+  fi
+
+  preload_libs "$package"
+  preload_assets "$package" "$asset_dir"
+  echo "■ Preload process finished for [ $package ]"
+}
+
+preload_game "$package_name"
+
+echo "■ Preloading process completed
+"
+sleep 0.1
+
+echo "
+Nice Renice optimizations:"
+echo "Launching $appname "
+echo "[ monkey -p "$gamepackage" 1 ]"
+sleep 0.1
+echo "■ Fetching $appname process PID "
+echo "[ pid=$(pidof "$gamepackage") ]"
+sleep 0.1
+echo "■ Setting $appname priority with nice "
+echo "[ nice -n 1 -p "$pid" ]"
+sleep 0.1
+echo "■ Setting $appname priority with renice "
+echo "[ renice -n 1 -p "$pid" ]"
+sleep 0.1
+echo "■ Priority set successfully for $appname"
+sleep 0.1
+
+echo "
+■ Optimizations run successfully"
+echo "
+      [ Code written by Droid_Everything ] "
+echo "
+"
+sleep 1
+
+# Nice renice commands, do not edit !!!
+# Launch the package with Monkey
+monkey -p "$gamepackage" 1
+sleep 1
+
+# Get PID of the package
+pid=$(pidof "$gamepackage")
+# Set priority for the process
+nice -n 1 -p "$pid"
+renice -n 1 -p "$pid"
+# Nice renice commands, do not edit !!!
+cmd notification post -S messaging --conversation "Droid Everything" --message "UltDroid: Full optimization complete" "UltDroid" "activation successful"
+# Force stopping Brevent itself after everything is done
+am force-stop me.piebridge.brevent
