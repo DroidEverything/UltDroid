@@ -186,15 +186,6 @@ sleep 0.1
     
 fi
 
-# Iterate over each package and force stop
-echo "$safe_packages" | while read -r package; do
-    # Extract the package name by removing the 'package:' prefix
-    package_name=$(echo "$package" | sed -e 's/package://')
-    echo "Hibernated:[ $package_name ]"
-    am force-stop $package_name
-    cmd app_hibernation set-state $package_name true
-done
-sleep 0.1
 echo "
 "
 
