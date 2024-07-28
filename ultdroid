@@ -151,6 +151,41 @@ echo "Used RAM:
 
 echo "
 "
+
+# Check if app_hibernation is available in cmd
+if cmd -l | grep -q 'app_hibernation'; then
+
+echo "■ App Force Stop supported"
+echo "■ App Hibernation supported"
+
+    # Iterate over each package and force stop
+echo "$safe_packages" | while read -r package; do
+    # Extract the package name by removing the 'package:' prefix
+    package_name=$(echo "$package" | sed -e 's/package://')
+    echo "Hibernated:[ $package_name ]"
+    am force-stop $package_name
+    cmd app_hibernation set-state $package_name true
+done
+sleep 0.1
+
+else
+
+echo "■ App Force Stop supported"
+echo "■ App Hibernation not supported"
+
+echo "■ Only Force stopping applications"
+
+# Iterate over each package and force stop
+echo "$safe_packages" | while read -r package; do
+    # Extract the package name by removing the 'package:' prefix
+    package_name=$(echo "$package" | sed -e 's/package://')
+    echo "Hibernated:[ $package_name ]"
+    am force-stop $package_name
+done
+sleep 0.1
+    
+fi
+
 # Iterate over each package and force stop
 echo "$safe_packages" | while read -r package; do
     # Extract the package name by removing the 'package:' prefix
@@ -1653,30 +1688,6 @@ Error: Please choose from
         ;;
 esac
 
-echo "
-App Force Stopper and Hibernator Section:"
-sleep 0.1
-
-echo "■ Excluding system and essential core apps"
-# Define the keyword patterns to exclude essential system apps
-exclude_patterns="system|systemui|brevent|com.google.android.providers.media.module|telephony|dialer|wallpaper|miui|media|com.android.shell"
-
-echo "■ Fetching safe packages list"
-# Get the list of safe packages to force stop
-safe_packages=$(pm list packages | grep -Ev "$exclude_patterns")
-
-echo "■ Force stopping apps that are safe"
-echo "■ Hibernating all apps"
-echo ""
-# Iterate over each package and force stop
-echo "$safe_packages" | while read -r package; do
-    # Extract the package name by removing the 'package:' prefix
-    package_name=$(echo "$package" | sed -e 's/package://')
-    echo "Hibernated:[ $package_name ]"
-    am force-stop $package_name
-    cmd app_hibernation set-state $package_name true
-done
-sleep 0.1
 
 
 echo "
