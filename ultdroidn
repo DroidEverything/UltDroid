@@ -274,7 +274,7 @@ sleep 0.5
 echo "
 "
 echo "■ Fetching Physical Resolution"
-sleep 0.5
+sleep 0.1
 
 # Get the physical display resolution using wm size without considering override
 resolution=$(wm size | awk -F: '/Physical size/{gsub(/[ ]+/,"",$2); print $2}')
@@ -291,12 +291,12 @@ aspect_ratio_denominator=$original_height
 
 echo "■ Aspect ratio found 
   [ $original_width/$original_height ]"
-sleep 1
+sleep 0.1
 echo "■ Calculating resolution reduction"
-sleep 0.5
+sleep 0.1
 echo "■ Resolution will stay same 
    if you've selected default"
-sleep 1
+sleep 0.1
 
 # Function to calculate reduced resolution maintaining aspect ratio
 calculate_reduced_resolution() {
@@ -309,16 +309,16 @@ calculate_reduced_resolution() {
 # Check for the argument and calculate the reduced resolution accordingly
 case $2 in
   "low")
-    reduced_resolution=$(calculate_reduced_resolution 15)
+    reduced_resolution=$(calculate_reduced_resolution 10)
     ;;
   "medium")
-    reduced_resolution=$(calculate_reduced_resolution 20)
-    ;;
-  "high")
     reduced_resolution=$(calculate_reduced_resolution 25)
     ;;
-  "extreme")
+  "high")
     reduced_resolution=$(calculate_reduced_resolution 35)
+    ;;
+  "extreme")
+    reduced_resolution=$(calculate_reduced_resolution 50)
     ;;
   "default")
     # Default case: No change in resolution
@@ -327,7 +327,7 @@ case $2 in
   *)
     echo "
 Available modes are:
-[ low, medium, extreme, default ]
+[ low, medium, high, extreme, default ]
 
 "
     exit 1
@@ -336,55 +336,55 @@ esac
 
 
 echo "■ Extracting width-height from reduced resolution"
-sleep 0.5
+sleep 0.1
 # Extract changed width and height
 width=$(echo $reduced_resolution | cut -d'x' -f1)
 height=$(echo $reduced_resolution | cut -d'x' -f2)
 echo "
 "
 echo "■ Changing resolution to [ $reduced_resolution ]"
-sleep 1
+sleep 0.1
 
 wm size "$(echo "${width}" | tr -d '[:space:]')x$(echo "${height}" | tr -d '[:space:]')"
 echo "
 "
 echo "■ Calculating width to height ratio"
-sleep 0.5
+sleep 0.1
 # Calculate width-to-height ratio
 ratio=$(echo "scale=2; $width / $height" | bc)
 
 echo "■ Multiplying ratio by Droid constant"
-sleep 0.5
+sleep 0.1
 # Multiply the ratio by 14.81481481 [ Droid Ratio ]
 result=$(echo "scale=2; $ratio * 14.81481481" | bc)
 
 echo "■ Fetching perfect density for selected resolution"
-sleep 0.5
+sleep 0.1
 # Divide the height by the latest found ratio and round to the nearest integer
 height_result=$(printf "%.0f" "$(echo "scale=2; $height / $result" | bc)")
 
 echo "■ Perfect density found: [ $height_result ]"
-sleep 1
+sleep 0.1
 echo "
 "
 echo "Information:"
-sleep 0.5
+sleep 0.1
 echo "■ Physical Display Resolution: 
   [ $resolution ]"
-sleep 0.5
+sleep 0.1
 echo "■ Override Display resolution: 
   [ $reduced_resolution ]"
-sleep 0.5
+sleep 0.1
 echo "■ Width-Height Ratio: [ $ratio ]"
-sleep 0.5
+sleep 0.1
 echo "■ Ratio multiplied by Droid constant: 
   [ $result ]"
-sleep 0.5
+sleep 0.1
 echo "■ Height divided by the final ratio (rounded): 
   [ $height_result ]"
-sleep 0.5
+sleep 0.1
 echo "■ Setting perfect density to [ $height_result ]"
-sleep 1
+sleep 0.1
 # Set the rounded answer as the density using wm density
 wm density $height_result
 echo "
