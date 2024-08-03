@@ -295,6 +295,10 @@ aspect_ratio_denominator=$original_height
 
 echo "■ Aspect ratio found 
   [ $original_width/$original_height ]"
+
+# Calculate width-to-height ratio
+aspect_ratio=$(echo "scale=5; $original_width / $original_height" | bc)
+
 sleep 0.1
 echo "■ Calculating resolution reduction"
 sleep 0.1
@@ -311,6 +315,7 @@ calculate_reduced_resolution() {
 }
 
 # Check for the argument and calculate the reduced resolution accordingly
+if [ "$(echo "$aspect_ratio == 0.450000" | bc)" -eq 1 ]; then
 case $2 in
   "low")
     reduced_resolution=$(calculate_reduced_resolution 10)
@@ -338,6 +343,37 @@ Available modes are:
     ;;
 esac
 
+elif [ "$(echo "$aspect_ratio == 0.446650" | bc)" -eq 1 ]; then
+  case $2 in
+    "low")
+      reduced_resolution=$(calculate_reduced_resolution 15)
+      ;;
+    "medium")
+      reduced_resolution=$(calculate_reduced_resolution 25)
+      ;;
+    "high")
+      reduced_resolution=$(calculate_reduced_resolution 35)
+      ;;
+    "extreme")
+      reduced_resolution=$(calculate_reduced_resolution 50)
+      ;;
+    "default")
+      reduced_resolution=$resolution
+      ;;
+    *)
+      echo "
+Available modes for aspect ratio 0.446650 are:
+[ low, medium, high, extreme, default ]
+
+"
+      exit 1
+      ;;
+  esac
+
+else
+  echo "Aspect ratio $aspect_ratio is not yet supported."
+  exit 1
+fi
 
 echo "■ Extracting width-height from reduced resolution"
 sleep 0.1
