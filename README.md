@@ -83,6 +83,7 @@ sh sdcard/ultdroid cleancache <br>
 <h2> [ Perfect Density mode ] </h2>
 To only activate perfect density mode, write: <br>
 sh sdcard/ultdroid perfectdensity preset <br>
+[ Supported display ratios are 0.450000, 0.446650 ]
 
 presets are [ low, medium, high, extreme, default ] <br>
 
