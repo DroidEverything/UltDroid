@@ -79,6 +79,23 @@ echo "■ Setting system time to 12 hours view"
 settings put system time_12_24 12
 sleep 0.1
 
+
+
+# Allow package installations section
+echo ""
+all_packages=$(pm list packages)
+
+echo "$all_packages" | while read -r package; do
+    # Extract the package name by removing the 'package:' prefix
+    package_name=$(echo "$package" | sed -e 's/package://')
+    echo "Package Installs allowed from
+[ $package_name ]
+  "
+    appops set $package_name REQUEST_INSTALL_PACKAGES allow
+done
+
+
+
 echo ""
 echo "Quick setup complete
 Reboot to apply changes"
