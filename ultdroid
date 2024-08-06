@@ -1326,8 +1326,8 @@ sh sdcard/ultdroid gms disable
 ###
 
 
-### [ Enable Google Play Services mode ]
-To enable Google Play Services for extra RAM, write:
+### [ Enable Google Play Services mode ] #############
+To enable Google Play Services for normal usage, write:
 sh sdcard/ultdroid gms enable
 ###
 
@@ -1437,7 +1437,7 @@ sh sdcard/ultdroid perfectdensity low
 To disable Google Play Services for extra RAM, write:
 sh sdcard/ultdroid gms disable
 
-To enable Google Play Services, write:
+To enable Google Play Services for normal usage, write:
 sh sdcard/ultdroid gms enable
 ###
 
@@ -1552,7 +1552,7 @@ sh sdcard/ultdroid perfectdensity low
 To disable Google Play Services for extra RAM, write:
 sh sdcard/ultdroid gms disable
 
-To enable Google Play Services, write:
+To enable Google Play Services for normal usage, write:
 sh sdcard/ultdroid gms enable
 ###
 
