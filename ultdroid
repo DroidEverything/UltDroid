@@ -387,6 +387,33 @@ Available modes for aspect ratio 0.446650 are:
       ;;
   esac
 
+elif [ "$(echo "$aspect_ratio == 0.436363" | bc)" -eq 1 ]; then
+  case $2 in
+    "low")
+      reduced_resolution=$(calculate_reduced_resolution 10)
+      ;;
+    "medium")
+      reduced_resolution=$(calculate_reduced_resolution 17)
+      ;;
+    "high")
+      reduced_resolution=$(calculate_reduced_resolution 25)
+      ;;
+    "extreme")
+      reduced_resolution=$(calculate_reduced_resolution 50)
+      ;;
+    "default")
+      reduced_resolution=$resolution
+      ;;
+    *)
+      echo "
+Available modes for aspect ratio 0.436363 are:
+[ low, medium, high, extreme, default ]
+
+"
+      exit 1
+      ;;
+  esac
+
 else
   echo "Aspect ratio $aspect_ratio is not yet supported."
   exit 1
