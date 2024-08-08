@@ -10,6 +10,141 @@ sleep 0.5
 echo ""
 
 
+
+# Ultimate Gamelist section
+GAME_LIST_FILE="/sdcard/gamelist.txt"  # Ensure to set the correct path
+
+# Function to create gamelist.txt if it doesn't exist
+create_game_list() {
+    if [ ! -f "$GAME_LIST_FILE" ]; then
+        touch "$GAME_LIST_FILE"
+        echo "gamelist.txt created at $GAME_LIST_FILE"
+    fi
+}
+
+# Function to add games to gamelist.txt
+add_game_to_list() {
+    package=$1
+    alias=$2
+
+    # Check if the package name is already associated with another nickname
+    existing_alias=$(awk -v package="$package" '$1 == package {print $2}' "$GAME_LIST_FILE")
+    if [ -n "$existing_alias" ]; then
+        echo "
+Error:
+  Package [ $package ] is already associated
+  with nickname [ $existing_alias ]
+  "
+  cmd notification post -S messaging --conversation "Droid Everything" --message "UltDroid: Packagename or nickname already in use" "UltDroid:" "Successful">/dev/null
+        return
+    fi
+
+    # Check if the nickname is already in use
+    if grep -q " $alias$" "$GAME_LIST_FILE"; then
+        echo "Error: Nickname [ $alias ] is already in use."
+        return
+    fi
+
+    # Add package and nickname to gamelist
+    echo "$package $alias" >> "$GAME_LIST_FILE"
+    echo "
+  Added:
+  Game [ $package ] with nickname [ $alias ]
+  added to gamelist.txt
+  "
+  cmd notification post -S messaging --conversation "Droid Everything" --message "UltDroid: Game [ $package ] added to gamelist" "UltDroid:" "Successful">/dev/null
+
+}
+
+# Function to remove game from gamelist.txt by nickname
+remove_game_from_list() {
+    alias=$1
+    if grep -q " $alias$" "$GAME_LIST_FILE"; then
+        sed -i "/ $alias$/d" "$GAME_LIST_FILE"
+        echo "
+Removed:
+  Game with nickname [ $alias ]
+  removed from gamelist.txt"
+  cmd notification post -S messaging --conversation "Droid Everything" --message "UltDroid: Game [ $alias ] removed from gamelist" "UltDroid:" "Successful">/dev/null
+
+    else
+        echo "
+Error:
+  Nickname [ $alias ] not found in gamelist.txt
+  "
+    fi
+}
+
+# Function to display the contents of gamelist.txt
+display_game_list() {
+    echo "Current game list (package nickname):"
+    if [ -f "$GAME_LIST_FILE" ]; then
+  echo ""
+        cat "$GAME_LIST_FILE"
+    else
+        echo "gamelist.txt does not exist."
+    fi
+}
+
+# Function to check if a package name is valid
+is_valid_package() {
+    package=$1
+    pm list packages -3 | grep -q "^package:$package$"
+}
+
+# Function to get the package name by nickname
+get_package_by_alias() {
+    alias=$1
+    package=$(grep " $alias$" "$GAME_LIST_FILE" | awk '{print $1}')
+    echo "$package"
+}
+
+# Main logic to manage the gamelist
+manage_gamelist() {
+    create_game_list
+
+    if [ "$1" = "add" ]; then
+        if [ -n "$2" ] && [ -n "$3" ]; then
+            if is_valid_package "$2"; then
+                add_game_to_list "$2" "$3"
+            else
+                echo "Error: Package $2 is not valid or not installed."
+            fi
+        else
+            echo "Error: Please provide the game package name and nickname."
+            echo "Usage: $0 add <game_package_name> <nickname>"
+        fi
+    elif [ "$1" = "remove" ]; then
+        if [ -n "$2" ]; then
+            remove_game_from_list "$2"
+        else
+            echo "Error: Please provide the nickname of the game to remove."
+            echo "Usage: $0 remove <nickname>"
+        fi
+    elif [ "$1" = "gamelist" ]; then
+  echo ""
+        echo "$(display_game_list)
+  "
+    else
+        alias=$1
+        package=$(get_package_by_alias "$alias")
+        if [ -n "$package" ]; then
+            echo "$package"  # Print package name for given alias
+        
+        fi
+    fi
+}
+
+# Main script entry point
+main() {
+    manage_gamelist "$@"
+}
+
+# Call the main function with passed arguments
+main "$@"
+
+
+
 # Separate battery saver section
 if [ "$1" = "saver" ]; then
 echo "
@@ -1173,138 +1308,6 @@ echo "
 exit 1
 fi
 
-
-# Ultimate Gamelist section
-GAME_LIST_FILE="/sdcard/gamelist.txt"  # Ensure to set the correct path
-
-# Function to create gamelist.txt if it doesn't exist
-create_game_list() {
-    if [ ! -f "$GAME_LIST_FILE" ]; then
-        touch "$GAME_LIST_FILE"
-        echo "gamelist.txt created at $GAME_LIST_FILE"
-    fi
-}
-
-# Function to add games to gamelist.txt
-add_game_to_list() {
-    package=$1
-    alias=$2
-
-    # Check if the package name is already associated with another nickname
-    existing_alias=$(awk -v package="$package" '$1 == package {print $2}' "$GAME_LIST_FILE")
-    if [ -n "$existing_alias" ]; then
-        echo "
-Error:
-  Package [ $package ] is already associated
-  with nickname [ $existing_alias ]
-  "
-  cmd notification post -S messaging --conversation "Droid Everything" --message "UltDroid: Packagename or nickname already in use" "UltDroid:" "Successful">/dev/null
-        return
-    fi
-
-    # Check if the nickname is already in use
-    if grep -q " $alias$" "$GAME_LIST_FILE"; then
-        echo "Error: Nickname [ $alias ] is already in use."
-        return
-    fi
-
-    # Add package and nickname to gamelist
-    echo "$package $alias" >> "$GAME_LIST_FILE"
-    echo "
-  Added:
-  Game [ $package ] with nickname [ $alias ]
-  added to gamelist.txt
-  "
-  cmd notification post -S messaging --conversation "Droid Everything" --message "UltDroid: Game [ $package ] added to gamelist" "UltDroid:" "Successful">/dev/null
-
-}
-
-# Function to remove game from gamelist.txt by nickname
-remove_game_from_list() {
-    alias=$1
-    if grep -q " $alias$" "$GAME_LIST_FILE"; then
-        sed -i "/ $alias$/d" "$GAME_LIST_FILE"
-        echo "
-Removed:
-  Game with nickname [ $alias ]
-  removed from gamelist.txt"
-  cmd notification post -S messaging --conversation "Droid Everything" --message "UltDroid: Game [ $alias ] removed from gamelist" "UltDroid:" "Successful">/dev/null
-
-    else
-        echo "
-Error:
-  Nickname [ $alias ] not found in gamelist.txt
-  "
-    fi
-}
-
-# Function to display the contents of gamelist.txt
-display_game_list() {
-    echo "Current game list (package nickname):"
-    if [ -f "$GAME_LIST_FILE" ]; then
-  echo ""
-        cat "$GAME_LIST_FILE"
-    else
-        echo "gamelist.txt does not exist."
-    fi
-}
-
-# Function to check if a package name is valid
-is_valid_package() {
-    package=$1
-    pm list packages -3 | grep -q "^package:$package$"
-}
-
-# Function to get the package name by nickname
-get_package_by_alias() {
-    alias=$1
-    package=$(grep " $alias$" "$GAME_LIST_FILE" | awk '{print $1}')
-    echo "$package"
-}
-
-# Main logic to manage the gamelist
-manage_gamelist() {
-    create_game_list
-
-    if [ "$1" = "add" ]; then
-        if [ -n "$2" ] && [ -n "$3" ]; then
-            if is_valid_package "$2"; then
-                add_game_to_list "$2" "$3"
-            else
-                echo "Error: Package $2 is not valid or not installed."
-            fi
-        else
-            echo "Error: Please provide the game package name and nickname."
-            echo "Usage: $0 add <game_package_name> <nickname>"
-        fi
-    elif [ "$1" = "remove" ]; then
-        if [ -n "$2" ]; then
-            remove_game_from_list "$2"
-        else
-            echo "Error: Please provide the nickname of the game to remove."
-            echo "Usage: $0 remove <nickname>"
-        fi
-    elif [ "$1" = "gamelist" ]; then
-  echo ""
-        echo "$(display_game_list)
-  "
-    else
-        alias=$1
-        package=$(get_package_by_alias "$alias")
-        if [ -n "$package" ]; then
-            echo "$package"  # Print package name for given alias
-        
-        fi
-    fi
-}
-
-# Main script entry point
-main() {
-    manage_gamelist "$@"
-}
-
-# Call the main function with passed arguments
-main "$@"
 
 
 
