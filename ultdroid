@@ -248,7 +248,7 @@ sleep 0.1
 
 echo "■ Excluding system and essential core apps"
 # Define the keyword patterns to exclude essential system apps
-exclude_patterns="system|systemui|brevent|com.google.android.providers.media.module|telephony|dialer|wallpaper|miui|media|com.android.shell"
+exclude_patterns="settings|storage|system|systemui|brevent|com.google.android.providers.media.module|media|telephony|dialer|wallpaper|miui|media|com.android.shell|gms|mediatek|transsion|vivo|itel|miui|xiaomi|mi|oppo|telecom|unisoc|huawei"
 
 echo "■ Fetching safe packages list"
 # Get the list of safe packages to force stop
