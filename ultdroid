@@ -170,6 +170,89 @@ fi
 
 
 
+if [ "$1" = "appops" ]; then
+case $2 in
+
+"enable")
+
+echo "■ Excluding system and essential core apps"
+# Define the keyword patterns to exclude essential system apps
+exclude_patterns="settings|storage|system|systemui|brevent|com.google.android.providers.media.module|media|telephony|dialer|wallpaper|miui|media|com.android.shell|gms|mediatek|transsion|vivo|itel|miui|xiaomi|mi|oppo|telecom|unisoc|huawei"
+
+echo "■ Fetching safe packages list"
+# Get the list of safe packages to force stop
+safe_packages=$(pm list packages | grep -Ev "$exclude_patterns")
+
+
+if cmd -l | grep -q 'appops'; then
+
+echo "■ Appops supported"
+
+    # Iterate over each package and force stop
+echo "$safe_packages" | while read -r package; do
+    # Extract the package name by removing the 'package:' prefix
+    package_name=$(echo "$package" | sed -e 's/package://')
+    echo "Appops set for:
+[ $package_name ]"
+  
+  
+  appops set $package_name RUN_IN_BACKGROUND ignore
+  appops set $package_name RUN_ANY_IN_BACKGROUND ignore
+  appops set $package_name SYSTEM_ALERT_WINDOW ignore
+  appops set $package_name LOADER_USAGE_STATS ignore
+  appops set $package_name BLUETOOTH_SCAN ignore
+  appops set $package_name BLUETOOTH_CONNECT ignore
+  appops set $package_name BLUETOOTH_ADVERTISE ignore
+  appops set $package_name NEARBY_WIFI_DEVICES ignore
+  
+  
+done
+sleep 0.1
+
+else
+
+echo "
+■ Appops not supported sorry
+𝗰𝗺𝗱 𝗮𝗽𝗽𝗼𝗽𝘀 is not available
+"
+sleep 0.1
+    
+fi
+
+    ;;
+
+  "disable")
+
+echo "
+■ Appops operations reverted to default
+"
+appops reset
+
+
+    ;;
+  *)
+    echo "
+### [ Enable Appops mode ] ##########
+To enable Appops mode, write:
+sh sdcard/ultdroid appops enable
+###
+
+
+### [ Disable Appops mode ] #########
+To disable Appops mode, write:
+sh sdcard/ultdroid appops disable
+###
+
+"
+    exit 1
+    ;;
+esac
+
+exit 1
+fi
+
+
+
 # Device quick setup section
 if [ "$1" = "quicksetup" ]; then
 echo "
