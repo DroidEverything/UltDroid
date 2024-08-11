@@ -1571,6 +1571,15 @@ sh sdcard/ultdroid perfectdensity low
 ###
 
 
+### [ Appops mode ] ##########
+To enable Appops mode, write:
+sh sdcard/ultdroid appops enable
+
+To disable Appops mode, write:
+sh sdcard/ultdroid appops disable
+###
+
+
 ### [ Google Play Services manager ] ###############
 To disable Google Play Services for extra RAM, write:
 sh sdcard/ultdroid gms disable
@@ -1683,6 +1692,15 @@ presets are [ low, medium, high, extreme, default ]
 
 For example:
 sh sdcard/ultdroid perfectdensity low
+###
+
+
+### [ Appops mode ] ##########
+To enable Appops mode, write:
+sh sdcard/ultdroid appops enable
+
+To disable Appops mode, write:
+sh sdcard/ultdroid appops disable
 ###
 
 
