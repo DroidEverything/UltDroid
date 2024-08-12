@@ -204,6 +204,9 @@ echo "$safe_packages" | while read -r package; do
   appops set $package_name BLUETOOTH_CONNECT ignore
   appops set $package_name BLUETOOTH_ADVERTISE ignore
   appops set $package_name NEARBY_WIFI_DEVICES ignore
+  appops set $package_name READ_CALENDAR ignore
+  appops set $package_name RECEIVE_MMS ignore
+  appops set $package_name RECEIVE_WAP_PUSH ignore
   
   
 done
