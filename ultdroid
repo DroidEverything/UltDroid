@@ -5,7 +5,7 @@ echo "UltDroid, The Ultimate Android Game Optimizer
 by Droid Everything
 "
 echo ""
-echo "[ ROOT version 3.0 - FOR ROOTED DEVICES ONLY ]"
+echo "[ ROOT version 4.0 - FOR ROOTED DEVICES ONLY ]"
 sleep 0.5
 echo ""
 
@@ -144,32 +144,7 @@ main "$@"
 
 
 
-# Separate battery saver section
-if [ "$1" = "saver" ]; then
-echo "
-Enabling Battery saver mode:"
-sleep 0.1
-echo "■ Resetting thermalservice"
-  cmd thermalservice reset
-echo "■ Setting powermode to battery saver"
-  cmd power set-mode 1
-echo "■ Disabling fixed performance mode to save battery"
-  cmd power set-fixed-performance-mode-enabled false
-  settings put global low_power 1
-echo "■ Enabling adaptive power saver"
-  cmd power set-adaptive-power-saver-enabled true
-echo "■ Unforcing deviceidle"
-  cmd deviceidle unforce
-  cmd notification post -S messaging --conversation "Droid Everything" --message "UltDroid: Battery saver mode activated" "UltDroid:" "Activation successful">/dev/null
-  echo "
-■ Battery saver mode enabled successfully"
-  echo "
-"
-  exit 1
-fi
-
-
-
+# Separate Appops section
 if [ "$1" = "appops" ]; then
 case $2 in
 
@@ -177,23 +152,43 @@ case $2 in
 
 echo "■ Excluding system and essential core apps"
 # Define the keyword patterns to exclude essential system apps
-exclude_patterns="settings|storage|system|systemui|brevent|com.google.android.providers.media.module|media|telephony|dialer|wallpaper|miui|media|com.android.shell|gms|mediatek|transsion|vivo|itel|miui|xiaomi|mi|oppo|telecom|unisoc|huawei"
+exclude_patterns="settings|storage|system|systemui|brevent|com.google.android.providers.media.module|media|telephony|dialer|wallpaper|launcher|miui|media|com.android.shell|gms|mediatek|transsion|vivo|itel|miui|xiaomi|mi|oppo|telecom|unisoc|huawei"
 
 echo "■ Fetching safe packages list"
 # Get the list of safe packages to force stop
 safe_packages=$(pm list packages | grep -Ev "$exclude_patterns")
 
-
+echo "■ Checking if Appops is supported or not"
 if cmd -l | grep -q 'appops'; then
 
-echo "■ Appops supported"
+echo "
+■ Appops supported
+Applying below operations
 
-    # Iterate over each package and force stop
+  RUN_IN_BACKGROUND ignore
+  RUN_ANY_IN_BACKGROUND ignore
+  SYSTEM_ALERT_WINDOW ignore
+  LOADER_USAGE_STATS ignore
+  BLUETOOTH_SCAN ignore
+  BLUETOOTH_CONNECT ignore
+  BLUETOOTH_ADVERTISE ignore
+  NEARBY_WIFI_DEVICES ignore
+  READ_CALENDAR ignore
+  RECEIVE_MMS ignore
+  RECEIVE_WAP_PUSH ignore
+"
+
+# Iterate over each package and force stop
 echo "$safe_packages" | while read -r package; do
-    # Extract the package name by removing the 'package:' prefix
-    package_name=$(echo "$package" | sed -e 's/package://')
-    echo "Appops set for:
-[ $package_name ]"
+
+# Extract the package name by removing the 'package:' prefix
+package_name=$(echo "$package" | sed -e 's/package://')
+    
+# Get the application name associated with the package name
+appname=$(echo "$package" | sed 's/.*=//' | sed 's/\./ /g' | awk '{print $NF}')
+
+    echo "Appops set for: [ $appname ]"
+
   
   
   appops set $package_name RUN_IN_BACKGROUND ignore
@@ -207,16 +202,17 @@ echo "$safe_packages" | while read -r package; do
   appops set $package_name READ_CALENDAR ignore
   appops set $package_name RECEIVE_MMS ignore
   appops set $package_name RECEIVE_WAP_PUSH ignore
+    
   
   
 done
-sleep 0.1
+
 
 else
 
 echo "
 ■ Appops not supported sorry
-𝗰𝗺𝗱 𝗮𝗽𝗽𝗼𝗽𝘀 is not available
+cmd appops is not available
 "
 sleep 0.1
     
@@ -228,6 +224,7 @@ fi
 
 echo "
 ■ Appops operations reverted to default
+
 "
 appops reset
 
@@ -252,6 +249,57 @@ sh sdcard/ultdroid appops disable
 esac
 
 exit 1
+fi
+
+
+
+# Separate Priority mode
+# priority should be taken as 2nd argument because
+# 1st argument is reserved to extract packagename from ultimate
+# gamelist manager
+if [ "$2" = "priority" ]; then
+
+# Launch the package with Monkey
+monkey -p "$package" 1
+sleep 1
+
+# Get PID of the package
+pid=$(pidof "$package")
+
+# Set priority for the process
+su -c "nice -n -6 -p $pid"
+su -c "renice -n -6 -p $pid"
+su -c "chrt -f -p $pid 80"
+su -c "ionice -c 1 -n 0 -p $pid"
+su -c "iorenice $pid 0"
+
+exit 1
+fi
+
+
+
+# Separate battery saver section
+if [ "$1" = "saver" ]; then
+echo "
+Enabling Battery saver mode:"
+sleep 0.1
+echo "■ Resetting thermalservice"
+  cmd thermalservice reset
+echo "■ Setting powermode to battery saver"
+  cmd power set-mode 1
+echo "■ Disabling fixed performance mode to save battery"
+  cmd power set-fixed-performance-mode-enabled false
+  settings put global low_power 1
+echo "■ Enabling adaptive power saver"
+  cmd power set-adaptive-power-saver-enabled true
+echo "■ Unforcing deviceidle"
+  cmd deviceidle unforce
+  cmd notification post -S messaging --conversation "Droid Everything" --message "UltDroid: Battery saver mode activated" "UltDroid:" "Activation successful">/dev/null
+  echo "
+■ Battery saver mode enabled successfully"
+  echo "
+"
+  exit 1
 fi
 
 
@@ -329,19 +377,19 @@ fi
 # Separate app hibernator section
 if [ "$1" = "hibernate" ]; then
 echo "
-App Force Stopper and Hibernator Section:"
+App Force Stopper and Hibernator Section:
+    "
 sleep 0.1
 
 echo "■ Excluding system and essential core apps"
 # Define the keyword patterns to exclude essential system apps
-exclude_patterns="settings|storage|system|systemui|brevent|com.google.android.providers.media.module|media|telephony|dialer|wallpaper|miui|media|com.android.shell|gms|mediatek|transsion|vivo|itel|miui|xiaomi|mi|oppo|telecom|unisoc|huawei"
+exclude_patterns="settings|storage|system|systemui|brevent|com.google.android.providers.media.module|media|telephony|dialer|wallpaper|miui|com.android.shell|gms|mediatek|transsion|vivo|itel|miui|xiaomi|mi|oppo|telecom|unisoc|huawei|oplus|coloros|mediatek"
 
 echo "■ Fetching safe packages list"
 # Get the list of safe packages to force stop
 safe_packages=$(pm list packages | grep -Ev "$exclude_patterns")
 
-echo "■ Force stopping apps that are safe"
-echo "■ Hibernating all apps"
+echo "■ Force stopping only safe packages"
 echo "
 "
 
@@ -389,21 +437,29 @@ echo "Used RAM:
 echo "
 "
 
+echo "■ Checking if hibernation is supported"
 # Check if app_hibernation is available in cmd
 if cmd -l | grep -q 'app_hibernation'; then
 
 echo "■ App Force Stop supported"
 echo "■ App Hibernation supported"
+echo ""
 
-    # Iterate over each package and force stop
+# Iterate over each package and force stop
 echo "$safe_packages" | while read -r package; do
-    # Extract the package name by removing the 'package:' prefix
-    package_name=$(echo "$package" | sed -e 's/package://')
-    echo "Hibernated:[ $package_name ]"
+
+# Extract the package name by removing the 'package:' prefix
+package_name=$(echo "$package" | sed -e 's/package://')
+    
+# Get the application name associated with the package name
+appname=$(echo "$package" | sed 's/.*=//' | sed 's/\./ /g' | awk '{print $NF}')
+
+    echo "Hibernated:[ $appname ]"
     am force-stop $package_name
     cmd app_hibernation set-state $package_name true
+    
 done
-sleep 0.1
+
 
 else
 
@@ -411,15 +467,20 @@ echo "■ App Force Stop supported"
 echo "■ App Hibernation not supported"
 
 echo "■ Only Force stopping applications"
-
+echo ""
 # Iterate over each package and force stop
 echo "$safe_packages" | while read -r package; do
-    # Extract the package name by removing the 'package:' prefix
-    package_name=$(echo "$package" | sed -e 's/package://')
-    echo "Hibernated:[ $package_name ]"
+
+# Extract the package name by removing the 'package:' prefix
+package_name=$(echo "$package" | sed -e 's/package://')
+    
+# Get the application name associated with the package name
+appname=$(echo "$package" | sed 's/.*=//' | sed 's/\./ /g' | awk '{print $NF}')
+
+    echo "Hibernated:[ $appname ]"
     am force-stop $package_name
+    
 done
-sleep 0.1
     
 fi
 
@@ -552,7 +613,7 @@ calculate_reduced_resolution() {
 }
 
 # Check for the argument and calculate the reduced resolution accordingly
-if [ "$(echo "$aspect_ratio == 0.450000" | bc)" -eq 1 ]; then
+if [ "$(echo "$aspect_ratio == 0.45000" | bc)" -eq 1 ]; then
 case $2 in
   "low")
     reduced_resolution=$(calculate_reduced_resolution 10)
@@ -580,7 +641,7 @@ Available modes are:
     ;;
 esac
 
-elif [ "$(echo "$aspect_ratio == 0.446650" | bc)" -eq 1 ]; then
+elif [ "$(echo "$aspect_ratio == 0.44665" | bc)" -eq 1 ]; then
   case $2 in
     "low")
       reduced_resolution=$(calculate_reduced_resolution 15)
@@ -599,7 +660,7 @@ elif [ "$(echo "$aspect_ratio == 0.446650" | bc)" -eq 1 ]; then
       ;;
     *)
       echo "
-Available modes for aspect ratio 0.446650 are:
+Available modes for aspect ratio 0.44665 are:
 [ low, medium, high, extreme, default ]
 
 "
@@ -607,7 +668,7 @@ Available modes for aspect ratio 0.446650 are:
       ;;
   esac
 
-elif [ "$(echo "$aspect_ratio == 0.436363" | bc)" -eq 1 ]; then
+elif [ "$(echo "$aspect_ratio == 0.43636" | bc)" -eq 1 ]; then
   case $2 in
     "low")
       reduced_resolution=$(calculate_reduced_resolution 10)
@@ -626,7 +687,7 @@ elif [ "$(echo "$aspect_ratio == 0.436363" | bc)" -eq 1 ]; then
       ;;
     *)
       echo "
-Available modes for aspect ratio 0.436363 are:
+Available modes for aspect ratio 0.43636 are:
 [ low, medium, high, extreme, default ]
 
 "
@@ -634,7 +695,7 @@ Available modes for aspect ratio 0.436363 are:
       ;;
   esac
 
-elif [ "$(echo "$aspect_ratio == 0.625000" | bc)" -eq 1 ]; then
+elif [ "$(echo "$aspect_ratio == 0.62500" | bc)" -eq 1 ]; then
   case $2 in
     "low")
       reduced_resolution=$(calculate_reduced_resolution 20)
@@ -653,7 +714,34 @@ elif [ "$(echo "$aspect_ratio == 0.625000" | bc)" -eq 1 ]; then
       ;;
     *)
       echo "
-Available modes for aspect ratio 0.625000 are:
+Available modes for aspect ratio 0.62500 are:
+[ low, medium, high, extreme, default ]
+
+"
+      exit 1
+      ;;
+  esac
+  
+elif [ "$(echo "$aspect_ratio == 0.43902" | bc)" -eq 1 ]; then
+  case $2 in
+    "low")
+      reduced_resolution=$(calculate_reduced_resolution 10)
+      ;;
+    "medium")
+      reduced_resolution=$(calculate_reduced_resolution 25)
+      ;;
+    "high")
+      reduced_resolution=$(calculate_reduced_resolution 35)
+      ;;
+    "extreme")
+      reduced_resolution=$(calculate_reduced_resolution 45)
+      ;;
+    "default")
+      reduced_resolution=$resolution
+      ;;
+    *)
+      echo "
+Available modes for aspect ratio 0.43902 are:
 [ low, medium, high, extreme, default ]
 
 "
@@ -662,7 +750,8 @@ Available modes for aspect ratio 0.625000 are:
   esac
 
 else
-  echo "Aspect ratio $aspect_ratio is not yet supported."
+  echo "Aspect ratio $aspect_ratio is not yet supported.
+  "
   exit 1
 fi
 
@@ -1539,6 +1628,21 @@ Available graphics modes are:
 ###
 
 
+### [ Priority mode ] ###################
+To enable priority mode for a game, write:
+sh sdcard/ultdroid nickname priority
+###
+
+
+### [ Appops Mode ] #############
+To enable appops mode, write:
+sh sdcard/ultdroid appops enable
+
+To disable appops mode, write:
+sh sdcard/ultdroid appops disable
+###
+
+
 ### [ Battery Saver Mode ] ###############
 To only activate battery saver mode, write:
 sh sdcard/ultdroid saver
@@ -1571,15 +1675,6 @@ presets are [ low, medium, high, extreme, default ]
 
 For example:
 sh sdcard/ultdroid perfectdensity low
-###
-
-
-### [ Appops mode ] ##########
-To enable Appops mode, write:
-sh sdcard/ultdroid appops enable
-
-To disable Appops mode, write:
-sh sdcard/ultdroid appops disable
 ###
 
 
@@ -1663,6 +1758,21 @@ Available graphics modes are:
 ###
 
 
+### [ Priority mode ] ###################
+To enable priority mode for a game, write:
+sh sdcard/ultdroid nickname priority
+###
+
+
+### [ Appops Mode ] #############
+To enable appops mode, write:
+sh sdcard/ultdroid appops enable
+
+To disable appops mode, write:
+sh sdcard/ultdroid appops disable
+###
+
+
 ### [ Battery Saver Mode ] ###############
 To only activate battery saver mode, write:
 sh sdcard/ultdroid saver
@@ -1695,15 +1805,6 @@ presets are [ low, medium, high, extreme, default ]
 
 For example:
 sh sdcard/ultdroid perfectdensity low
-###
-
-
-### [ Appops mode ] ##########
-To enable Appops mode, write:
-sh sdcard/ultdroid appops enable
-
-To disable Appops mode, write:
-sh sdcard/ultdroid appops disable
 ###
 
 
@@ -1890,6 +1991,167 @@ Error: Please choose from
         exit 1
         ;;
 esac
+
+
+
+# Hibernator section for Full optimization mode
+echo "
+App Force Stopper and Hibernator Section:
+    "
+sleep 0.1
+
+echo "■ Excluding system and essential core apps"
+# Define the keyword patterns to exclude essential system apps
+exclude_patterns="settings|storage|system|systemui|brevent|com.google.android.providers.media.module|media|telephony|dialer|wallpaper|miui|com.android.shell|gms|mediatek|transsion|vivo|itel|miui|xiaomi|mi|oppo|telecom|unisoc|huawei|oplus|coloros|mediatek"
+
+echo "■ Fetching safe packages list"
+# Get the list of safe packages to force stop
+safe_packages=$(pm list packages | grep -Ev "$exclude_patterns")
+
+echo "■ Force stopping only safe packages"
+echo "
+"
+
+echo "[ RAMstats before ]
+"
+
+# Get the total, available, and used RAM in KB
+total_ram_kb=$(grep MemTotal /proc/meminfo | awk '{print $2}')
+available_ram_kb=$(grep MemAvailable /proc/meminfo | awk '{print $2}')
+used_ram_kb=$(echo "$total_ram_kb - $available_ram_kb" | bc)
+
+# Convert the RAM values to MB
+total_ram_mb=$(echo "scale=2; $total_ram_kb / 1024" | bc)
+available_ram_mb=$(echo "scale=2; $available_ram_kb / 1024" | bc)
+used_ram_mb=$(echo "scale=2; $used_ram_kb / 1024" | bc)
+
+# Calculate the percentages of available and used RAM
+available_ram_percent=$(echo "scale=2; $available_ram_kb / $total_ram_kb * 100" | bc)
+used_ram_percent=$(echo "scale=2; $used_ram_kb / $total_ram_kb * 100" | bc)
+
+# Calculate the number of "■" characters to represent the bars
+total_num_bars=10
+available_num_bars=$(echo "$available_ram_percent / 10" | bc)  # 10 characters bar, each represents 10%
+used_num_bars=$(echo "$used_ram_percent / 10" | bc)  # 10 characters bar, each represents 10%
+
+# Total RAM bar (always fully filled)
+total_bar=$(printf "%0.s■" $(seq 1 $total_num_bars))
+
+# Available RAM bar
+available_bar=$(printf "%0.s■" $(seq 1 $available_num_bars))
+available_bar=$(printf "%-10s" "$available_bar")
+
+# Used RAM bar
+used_bar=$(printf "%0.s■" $(seq 1 $used_num_bars))
+used_bar=$(printf "%-10s" "$used_bar")
+
+# Print the total RAM bar, used RAM bar, and available RAM bar with RAM data in MB
+echo "Total RAM:
+[ 100.00% ${total_bar} ${total_ram_mb} MB ]"
+echo "Available RAM:
+[  ${available_ram_percent}% ${available_bar} ${available_ram_mb} MB ]"
+echo "Used RAM:
+[  ${used_ram_percent}% ${used_bar} ${used_ram_mb} MB ]"
+
+echo "
+"
+
+echo "■ Checking if hibernation is supported"
+# Check if app_hibernation is available in cmd
+if cmd -l | grep -q 'app_hibernation'; then
+
+echo "■ App Force Stop supported"
+echo "■ App Hibernation supported"
+echo ""
+
+# Iterate over each package and force stop
+echo "$safe_packages" | while read -r package; do
+
+# Extract the package name by removing the 'package:' prefix
+package_name=$(echo "$package" | sed -e 's/package://')
+    
+# Get the application name associated with the package name
+appname=$(echo "$package" | sed 's/.*=//' | sed 's/\./ /g' | awk '{print $NF}')
+
+    echo "Hibernated:[ $appname ]"
+    am force-stop $package_name
+    cmd app_hibernation set-state $package_name true
+    
+done
+
+
+else
+
+echo "■ App Force Stop supported"
+echo "■ App Hibernation not supported"
+
+echo "■ Only Force stopping applications"
+echo ""
+
+# Iterate over each package and force stop
+echo "$safe_packages" | while read -r package; do
+
+# Extract the package name by removing the 'package:' prefix
+package_name=$(echo "$package" | sed -e 's/package://')
+    
+# Get the application name associated with the package name
+appname=$(echo "$package" | sed 's/.*=//' | sed 's/\./ /g' | awk '{print $NF}')
+
+    echo "Hibernated:[ $appname ]"
+    am force-stop $package_name
+    
+done
+
+    
+fi
+
+echo "
+"
+
+echo "[ RAMstats after ]
+"
+
+# Get the total, available, and used RAM in KB
+total_ram_kb=$(grep MemTotal /proc/meminfo | awk '{print $2}')
+available_ram_kb=$(grep MemAvailable /proc/meminfo | awk '{print $2}')
+used_ram_kb=$(echo "$total_ram_kb - $available_ram_kb" | bc)
+
+# Convert the RAM values to MB
+total_ram_mb=$(echo "scale=2; $total_ram_kb / 1024" | bc)
+available_ram_mb=$(echo "scale=2; $available_ram_kb / 1024" | bc)
+used_ram_mb=$(echo "scale=2; $used_ram_kb / 1024" | bc)
+
+# Calculate the percentages of available and used RAM
+available_ram_percent=$(echo "scale=2; $available_ram_kb / $total_ram_kb * 100" | bc)
+used_ram_percent=$(echo "scale=2; $used_ram_kb / $total_ram_kb * 100" | bc)
+
+# Calculate the number of "■" characters to represent the bars
+total_num_bars=10
+available_num_bars=$(echo "$available_ram_percent / 10" | bc)  # 10 characters bar, each represents 10%
+used_num_bars=$(echo "$used_ram_percent / 10" | bc)  # 10 characters bar, each represents 10%
+
+# Total RAM bar (always fully filled)
+total_bar=$(printf "%0.s■" $(seq 1 $total_num_bars))
+
+# Available RAM bar
+available_bar=$(printf "%0.s■" $(seq 1 $available_num_bars))
+available_bar=$(printf "%-10s" "$available_bar")
+
+# Used RAM bar
+used_bar=$(printf "%0.s■" $(seq 1 $used_num_bars))
+used_bar=$(printf "%-10s" "$used_bar")
+
+# Print the total RAM bar, used RAM bar, and available RAM bar with RAM data in MB
+echo "Total RAM:
+[ 100.00% ${total_bar} ${total_ram_mb} MB ]"
+echo "Available RAM:
+[  ${available_ram_percent}% ${available_bar} ${available_ram_mb} MB ]"
+echo "Used RAM:
+[  ${used_ram_percent}% ${used_bar} ${used_ram_mb} MB ]"
+
+echo "
+"
+cmd notification post -S messaging --conversation "Droid Everything" --message "UltDroid: $(available_ram_mb) MB RAM available after force stopping" "UltDroid:" "Successful">/dev/null
 
 
 
@@ -2343,147 +2605,6 @@ sleep 1
 
 
 echo "
-App Force Stopper and Hibernator Section:"
-sleep 0.1
-
-echo "■ Excluding system and essential core apps"
-# Define the keyword patterns to exclude essential system apps
-exclude_patterns="settings|storage|system|systemui|brevent|com.google.android.providers.media.module|media|telephony|dialer|wallpaper|miui|media|com.android.shell|gms|mediatek|transsion|vivo|itel|miui|xiaomi|mi|oppo|telecom|unisoc|huawei"
-
-echo "■ Fetching safe packages list"
-# Get the list of safe packages to force stop
-safe_packages=$(pm list packages | grep -Ev "$exclude_patterns")
-
-echo "■ Force stopping apps that are safe"
-echo "■ Hibernating all apps"
-echo "
-"
-
-echo "[ RAMstats before ]
-"
-
-# Get the total, available, and used RAM in KB
-total_ram_kb=$(grep MemTotal /proc/meminfo | awk '{print $2}')
-available_ram_kb=$(grep MemAvailable /proc/meminfo | awk '{print $2}')
-used_ram_kb=$(echo "$total_ram_kb - $available_ram_kb" | bc)
-
-# Convert the RAM values to MB
-total_ram_mb=$(echo "scale=2; $total_ram_kb / 1024" | bc)
-available_ram_mb=$(echo "scale=2; $available_ram_kb / 1024" | bc)
-used_ram_mb=$(echo "scale=2; $used_ram_kb / 1024" | bc)
-
-# Calculate the percentages of available and used RAM
-available_ram_percent=$(echo "scale=2; $available_ram_kb / $total_ram_kb * 100" | bc)
-used_ram_percent=$(echo "scale=2; $used_ram_kb / $total_ram_kb * 100" | bc)
-
-# Calculate the number of "■" characters to represent the bars
-total_num_bars=10
-available_num_bars=$(echo "$available_ram_percent / 10" | bc)  # 10 characters bar, each represents 10%
-used_num_bars=$(echo "$used_ram_percent / 10" | bc)  # 10 characters bar, each represents 10%
-
-# Total RAM bar (always fully filled)
-total_bar=$(printf "%0.s■" $(seq 1 $total_num_bars))
-
-# Available RAM bar
-available_bar=$(printf "%0.s■" $(seq 1 $available_num_bars))
-available_bar=$(printf "%-10s" "$available_bar")
-
-# Used RAM bar
-used_bar=$(printf "%0.s■" $(seq 1 $used_num_bars))
-used_bar=$(printf "%-10s" "$used_bar")
-
-# Print the total RAM bar, used RAM bar, and available RAM bar with RAM data in MB
-echo "Total RAM:
-[ 100.00% ${total_bar} ${total_ram_mb} MB ]"
-echo "Available RAM:
-[  ${available_ram_percent}% ${available_bar} ${available_ram_mb} MB ]"
-echo "Used RAM:
-[  ${used_ram_percent}% ${used_bar} ${used_ram_mb} MB ]"
-
-echo "
-"
-
-# Check if app_hibernation is available in cmd
-if cmd -l | grep -q 'app_hibernation'; then
-
-echo "■ App Force Stop supported"
-echo "■ App Hibernation supported"
-
-    # Iterate over each package and force stop
-echo "$safe_packages" | while read -r package; do
-    # Extract the package name by removing the 'package:' prefix
-    package_name=$(echo "$package" | sed -e 's/package://')
-    echo "Hibernated:[ $package_name ]"
-    am force-stop $package_name
-    cmd app_hibernation set-state $package_name true
-done
-sleep 0.1
-
-else
-
-echo "■ App Force Stop supported"
-echo "■ App Hibernation not supported"
-
-echo "■ Only Force stopping applications"
-
-# Iterate over each package and force stop
-echo "$safe_packages" | while read -r package; do
-    # Extract the package name by removing the 'package:' prefix
-    package_name=$(echo "$package" | sed -e 's/package://')
-    echo "Hibernated:[ $package_name ]"
-    am force-stop $package_name
-done
-sleep 0.1
-    
-fi
-
-echo "
-"
-
-echo "[ RAMstats after ]
-"
-
-# Get the total, available, and used RAM in KB
-total_ram_kb=$(grep MemTotal /proc/meminfo | awk '{print $2}')
-available_ram_kb=$(grep MemAvailable /proc/meminfo | awk '{print $2}')
-used_ram_kb=$(echo "$total_ram_kb - $available_ram_kb" | bc)
-
-# Convert the RAM values to MB
-total_ram_mb=$(echo "scale=2; $total_ram_kb / 1024" | bc)
-available_ram_mb=$(echo "scale=2; $available_ram_kb / 1024" | bc)
-used_ram_mb=$(echo "scale=2; $used_ram_kb / 1024" | bc)
-
-# Calculate the percentages of available and used RAM
-available_ram_percent=$(echo "scale=2; $available_ram_kb / $total_ram_kb * 100" | bc)
-used_ram_percent=$(echo "scale=2; $used_ram_kb / $total_ram_kb * 100" | bc)
-
-# Calculate the number of "■" characters to represent the bars
-total_num_bars=10
-available_num_bars=$(echo "$available_ram_percent / 10" | bc)  # 10 characters bar, each represents 10%
-used_num_bars=$(echo "$used_ram_percent / 10" | bc)  # 10 characters bar, each represents 10%
-
-# Total RAM bar (always fully filled)
-total_bar=$(printf "%0.s■" $(seq 1 $total_num_bars))
-
-# Available RAM bar
-available_bar=$(printf "%0.s■" $(seq 1 $available_num_bars))
-available_bar=$(printf "%-10s" "$available_bar")
-
-# Used RAM bar
-used_bar=$(printf "%0.s■" $(seq 1 $used_num_bars))
-used_bar=$(printf "%-10s" "$used_bar")
-
-# Print the total RAM bar, used RAM bar, and available RAM bar with RAM data in MB
-echo "Total RAM:
-[ 100.00% ${total_bar} ${total_ram_mb} MB ]"
-echo "Available RAM:
-[  ${available_ram_percent}% ${available_bar} ${available_ram_mb} MB ]"
-echo "Used RAM:
-[  ${used_ram_percent}% ${used_bar} ${used_ram_mb} MB ]"
-
-
-
-echo "
 Checking if device supports OpenCl:"
 sleep 0.1
 # List of files to check for
@@ -2874,10 +2995,19 @@ echo "■ Fetching $appname process PID "
 echo "[ pid=$(pidof "$gamepackage") ]"
 sleep 0.1
 echo "■ Setting $appname priority with nice "
-echo "[ su -c nice -n -6 -p "$pid" ]"
+echo "[ su -c nice -n -10 -p "$pid" ]"
 sleep 0.1
 echo "■ Setting $appname priority with renice "
-echo "[ su -c renice -n -6 -p "$pid" ]"
+echo "[ su -c renice -n -10 -p "$pid" ]"
+sleep 0.1
+echo "■ Setting $appname priority with chrt"
+echo "[ su -c chrt -f -p "$pid" 80 ]"
+sleep 0.1
+echo "■ Setting $appname priority with ionice "
+echo "[ su -c ionice -c 1 -n 0 -p "$pid" ]"
+sleep 0.1
+echo "■ Setting $appname priority with iorenice "
+echo "[ su -c iorenice "$pid" 0 ]"
 sleep 0.1
 echo "■ Priority set successfully for $appname"
 sleep 0.1
@@ -2897,10 +3027,16 @@ sleep 1
 
 # Get PID of the package
 pid=$(pidof "$gamepackage")
+
 # Set priority for the process
-su -c nice -n -6 -p "$pid"
-su -c renice -n -6 -p "$pid"
+su -c "nice -n -10 -p $pid"
+su -c "renice -n -10 -p $pid"
+su -c "chrt -f -p $pid 80"
+su -c "ionice -c 1 -n 0 -p $pid"
+su -c "iorenice $pid 0"
+
 # Nice renice commands, do not edit !!!
 cmd notification post -S messaging --conversation "Droid Everything" --message "UltDroid: Full optimization mode activated successfully" "UltDroid" "activation successful"
+
 # Force stopping Brevent itself after everything is done
 am force-stop me.piebridge.brevent
