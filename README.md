@@ -1,4 +1,4 @@
-<h2> UltDroid [ Version 3.0 ] </h2> 
+<h2> UltDroid [ Version 4.0 ] </h2> 
 <p><b>About:</b></br>
 An Android optimization tool that optimizes Android for extra performance.<br>
 [ Highly Beneficial for Gaming ]</p>
@@ -58,6 +58,19 @@ sh sdcard/ultdroid ff medium <br>
 Please provide the game package name and <br>
 Available graphics modes are: <br>
 [ low, medium, high, ultra, off ] <br>
+
+
+<h2> [ Priority mode ] </h2>
+To enable priority mode for a game, write: <br>
+sh sdcard/ultdroid nickname priority <br>
+
+
+<h2> [ Appops Mode ] </h2>
+To enable appops mode, write: <br>
+sh sdcard/ultdroid appops enable <br>
+<br>
+To disable appops mode, write: <br>
+sh sdcard/ultdroid appops disable <br>
 
 
 <h2> [ Battery Saver Mode ] </h2>
