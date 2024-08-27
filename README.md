@@ -104,16 +104,6 @@ For example: <br>
 sh sdcard/ultdroid perfectdensity low <br>
 
 
-
-<h2> [ Appops mode ] </h2>
-To enable Appops mode, write: <br>
-sh sdcard/ultdroid appops enable <br>
-<br>
-To disable Appops mode, write: <br>
-sh sdcard/ultdroid appops disable <br>
-
-
-
 <h2> [ Google Play Services manager ] </h2>
 To disable Google Play Services for extra RAM, write: <br>
 sh sdcard/ultdroid gms disable <br>
